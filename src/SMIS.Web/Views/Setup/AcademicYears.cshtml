@@ -1,0 +1,251 @@
+@model List<SMIS.Domain.Entities.School.AcademicYear>
+@{
+    ViewData["Title"] = "Academic Years";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-calendar-alt me-2 text-primary"></i>Academic Years
+                </span>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-primary btn-sm"
+                        data-bs-toggle="modal" data-bs-target="#addYearModal">
+                    <i class="fas fa-plus me-1"></i> Add Academic Year
+                </button>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (!Model.Any())
+            {
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Academic Years Yet</h5>
+                        <p class="text-muted">Click "Add Academic Year" to get started.</p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                @foreach (var year in Model)
+                {
+                    <div class="card mb-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fas fa-calendar-alt text-primary"></i>
+                                <strong>@year.Name</strong>
+                                @if (year.IsCurrent)
+                                {
+                                    <span class="badge bg-success">Current</span>
+                                }
+                            </div>
+                            <div class="d-flex gap-2 align-items-center">
+                                <small class="text-muted">
+                                    @year.StartDate.ToString("MMM yyyy") —
+                                    @year.EndDate.ToString("MMM yyyy")
+                                </small>
+                                @if (!year.IsCurrent)
+                                {
+                                    <form asp-action="SetCurrentYear" asp-controller="Setup"
+                                          method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@year.Id" />
+                                        <button type="submit" class="btn btn-outline-success btn-sm">
+                                            Set as Current
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Term</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var term in year.Terms.OrderBy(t => t.TermNumber))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <i class="fas fa-bookmark text-primary me-2"></i>
+                                                @term.Name
+                                            </td>
+                                            <td>@term.StartDate.ToString("dd MMM yyyy")</td>
+                                            <td>@term.EndDate.ToString("dd MMM yyyy")</td>
+                                            <td>
+                                                @if (term.IsCurrent)
+                                                {
+                                                    <span class="badge bg-success">Current</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Inactive</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-outline-primary btn-sm"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#editTermModal"
+                                                        data-term-id="@term.Id"
+                                                        data-term-name="@term.Name"
+                                                        data-start="@term.StartDate.ToString("yyyy-MM-dd")"
+                                                        data-end="@term.EndDate.ToString("yyyy-MM-dd")"
+                                                        data-current="@term.IsCurrent.ToString().ToLower()">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@* ADD ACADEMIC YEAR MODAL *@
+<div class="modal fade" id="addYearModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>Add Academic Year
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="CreateAcademicYear" asp-controller="Setup" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Year Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control"
+                               placeholder="e.g. 2024/2025" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Year <span class="text-danger">*</span></label>
+                        <input type="number" name="year" class="form-control"
+                               value="@DateTime.Now.Year" required />
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Start Date <span class="text-danger">*</span></label>
+                            <input type="date" name="startDate" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">End Date <span class="text-danger">*</span></label>
+                            <input type="date" name="endDate" class="form-control" required />
+                        </div>
+                    </div>
+                    <div class="form-check mt-3">
+                        <input type="checkbox" name="isCurrent" value="true"
+                               class="form-check-input" id="isCurrentCheck" />
+                        <label class="form-check-label" for="isCurrentCheck">
+                            Set as current academic year
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Create Year
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* EDIT TERM MODAL *@
+<div class="modal fade" id="editTermModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>Edit Term Dates
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="UpdateTerm" asp-controller="Setup" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="editTermId" />
+                <div class="modal-body">
+                    <h6 class="text-primary mb-3" id="editTermName"></h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Start Date <span class="text-danger">*</span></label>
+                            <input type="date" name="startDate" id="editStartDate"
+                                   class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">End Date <span class="text-danger">*</span></label>
+                            <input type="date" name="endDate" id="editEndDate"
+                                   class="form-control" required />
+                        </div>
+                    </div>
+                    <div class="form-check mt-3">
+                        <input type="checkbox" name="isCurrent" value="true"
+                               class="form-check-input" id="editIsCurrent" />
+                        <label class="form-check-label" for="editIsCurrent">
+                            Set as current term
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.querySelectorAll('[data-bs-target="#editTermModal"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.getElementById('editTermId').value = this.dataset.termId;
+            document.getElementById('editTermName').textContent = this.dataset.termName;
+            document.getElementById('editStartDate').value = this.dataset.start;
+            document.getElementById('editEndDate').value = this.dataset.end;
+            document.getElementById('editIsCurrent').checked = this.dataset.current === 'true';
+        });
+    });
+</script>
+}

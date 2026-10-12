@@ -1,0 +1,134 @@
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <a href="/Library/Books" class="text-decoration-none">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-book"></i></div>
+                <div>
+                    <div class="stat-value">@ViewBag.TotalBooks</div>
+                    <div class="stat-label">Total Titles</div>
+                    <small class="text-muted">@ViewBag.TotalCopies copies</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a href="/Library/Books" class="text-decoration-none">
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+                <div>
+                    <div class="stat-value">@ViewBag.AvailableCopies</div>
+                    <div class="stat-label">Available Copies</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a href="/Library/Issues" class="text-decoration-none">
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fas fa-book-reader"></i></div>
+                <div>
+                    <div class="stat-value">@ViewBag.IssuedBooks</div>
+                    <div class="stat-label">Currently Issued</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a href="/Library/Issues" class="text-decoration-none">
+            <div class="stat-card">
+                <div class="stat-icon purple"><i class="fas fa-exclamation-triangle"></i></div>
+                <div>
+                    <div class="stat-value">@ViewBag.OverdueBooks</div>
+                    <div class="stat-label">Overdue</div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+@* Chart — Copies Status *@
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="fas fa-chart-pie me-2 text-primary"></i><strong>Copies Status</strong>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="libraryCopiesChart" width="220" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="fas fa-bolt me-2 text-primary"></i><strong>Quick Actions</strong>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-12">
+                        <a href="/Library/Issues" class="btn btn-outline-success w-100 py-3 mb-2">
+                            <i class="fas fa-exchange-alt d-block fa-lg mb-1"></i>Issue / Return
+                        </a>
+                        <a href="/Library/Books" class="btn btn-outline-primary w-100 py-3">
+                            <i class="fas fa-book d-block fa-lg mb-1"></i>Manage Books
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between">
+                <span><i class="fas fa-history me-2 text-success"></i><strong>Recent Issues</strong></span>
+                <a href="/Library/Issues" class="btn btn-sm btn-outline-success">View All</a>
+            </div>
+            @{
+                var issues = ViewBag.RecentIssues as List<SMIS.Domain.Entities.Library.BookIssue>;
+            }
+            @if (issues == null || !issues.Any())
+            {
+                <div class="card-body text-center py-3">
+                    <p class="text-muted mb-0">No recent issues.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive" style="max-height: 260px; overflow-y: auto;">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            @foreach (var i in issues)
+                            {
+                                <tr>
+                                    <td><strong>@(i.Book?.Title ?? "Unknown Title")</strong></td>
+                                    <td class="text-muted small">@(i.Student?.FullName ?? "Unknown")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    try {
+        new Chart(document.getElementById('libraryCopiesChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Available', 'Issued (on time)', 'Overdue'],
+                datasets: [{
+                    data: [
+                        @(ViewBag.AvailableCopies ?? 0),
+                        @(Math.Max(0, (int)(ViewBag.IssuedBooks ?? 0) - (int)(ViewBag.OverdueBooks ?? 0))),
+                        @(ViewBag.OverdueBooks ?? 0)
+                    ],
+                    backgroundColor: ['#057a55', '#d97706', '#dc2626'],
+                    borderWidth: 2
+                }]
+            },
+            options: { responsive: false, plugins: { legend: { position: 'bottom' } } }
+        });
+    } catch(e) { console.log('Library copies chart error:', e); }
+</script>

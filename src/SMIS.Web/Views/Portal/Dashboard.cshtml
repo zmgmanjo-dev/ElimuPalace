@@ -1,0 +1,147 @@
+@{
+    Layout = "_PortalLayout";
+    ViewData["Title"] = "Dashboard";
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-4">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (ViewBag.NoChildrenLinked == true)
+{
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        No students are linked to your account yet. Please contact the school office.
+    </div>
+}
+else
+{
+    var student = ViewBag.SelectedStudent as SMIS.Domain.Entities.Students.Student;
+
+    @await Html.PartialAsync("_ChildSelector")
+
+    <div class="card mb-4">
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-md-8">
+                    <h4 class="fw-bold mb-1">@student!.FullName</h4>
+                    <p class="text-muted mb-0">
+                        Admission No: @student.AdmissionNumber |
+                        Class: @(student.ClassLevel?.Name ?? "-")
+                        @(student.ClassStream != null ? $"— {student.ClassStream.Name}" : "")
+                    </p>
+                    @if (ViewBag.CurrentTerm != null)
+                    {
+                        <span class="badge bg-success mt-2">
+                            @ViewBag.CurrentTerm.AcademicYear.Name — @ViewBag.CurrentTerm.Name
+                        </span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <a href="/Portal/FeeStatement?studentId=@student.Id" class="text-decoration-none">
+                <div class="card h-100 @(((decimal)ViewBag.Balance) > 0 ? "border-danger" : "border-success")">
+                    <div class="card-body">
+                        <div class="text-muted small mb-1">Fee Balance</div>
+                        <div class="fs-4 fw-bold @(((decimal)ViewBag.Balance) > 0 ? "text-danger" : "text-success")">
+                            KES @(((decimal)ViewBag.Balance).ToString("N0"))
+                        </div>
+                        <div class="text-muted small mt-2">
+                            Paid: KES @(((decimal)ViewBag.TotalPaid).ToString("N0"))
+                            of KES @(((decimal)ViewBag.TotalInvoiced).ToString("N0"))
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="/Portal/Attendance?studentId=@student.Id" class="text-decoration-none">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="text-muted small mb-1">Attendance (This Term)</div>
+                        <div class="fs-4 fw-bold @(((double)ViewBag.AttendanceRate) >= 80 ? "text-success" : "text-warning")">
+                            @ViewBag.AttendanceRate%
+                        </div>
+                        <div class="text-muted small mt-2">
+                            @ViewBag.Present present of @ViewBag.TotalMarked days
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="/Portal/ReportCard?studentId=@student.Id" class="text-decoration-none">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="text-muted small mb-1">CBC Assessments</div>
+                        <div class="fs-4 fw-bold text-primary">
+                            @(((List<SMIS.Domain.Entities.Academic.CBCAssessment>)ViewBag.Assessments).Count)
+                        </div>
+                        <div class="text-muted small mt-2">recorded this term</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <strong><i class="fas fa-comments me-2 text-primary"></i>Feedback</strong>
+                    @if ((int)ViewBag.UnreadFeedback > 0)
+                    {
+                        <span class="badge bg-danger">@ViewBag.UnreadFeedback new</span>
+                    }
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        Message the school about @student.FullName directly.
+                    </p>
+                    <a href="/Portal/Feedback?studentId=@student.Id" class="btn btn-outline-primary btn-sm">
+                        Open Conversation
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <strong><i class="fas fa-bullhorn me-2 text-primary"></i>Latest Updates</strong>
+                </div>
+                <div class="card-body">
+                    @{
+                        var newsletters = ViewBag.Newsletters as List<SMIS.Domain.Entities.Communication.Newsletter>;
+                    }
+                    @if (newsletters == null || !newsletters.Any())
+                    {
+                        <p class="text-muted small mb-0">No updates published yet.</p>
+                    }
+                    else
+                    {
+                        @foreach (var n in newsletters)
+                        {
+                            <div class="mb-2 pb-2 border-bottom">
+                                <div class="fw-bold small">@n.Title</div>
+                                <div class="text-muted" style="font-size:11px;">
+                                    @n.PublishedAt?.ToString("dd MMM yyyy")
+                                </div>
+                            </div>
+                        }
+                        <a href="/Portal/Newsletter" class="btn btn-outline-secondary btn-sm mt-2">
+                            View All Updates
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}

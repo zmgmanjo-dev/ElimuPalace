@@ -1,0 +1,373 @@
+@model List<SMIS.Domain.Entities.Accounting.SupplierInvoice>
+@using SMIS.Domain.Entities.Accounting
+@using SMIS.Domain.Entities.Finance
+@{
+    ViewData["Title"] = "Supplier Invoices";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-file-invoice-dollar me-2 text-primary"></i>
+                    Supplier Invoices
+                </span>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-primary btn-sm me-2"
+                        data-bs-toggle="modal"
+                        data-bs-target="#addInvoiceModal">
+                    <i class="fas fa-plus me-1"></i> New Invoice
+                </button>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @* Filter Tabs *@
+            <div class="mb-3">
+                <a href="/AccountsPayable/SupplierInvoices"
+                   class="btn btn-sm @(ViewBag.Status == null ? "btn-primary" : "btn-outline-primary") me-1">
+                    All
+                </a>
+                <a href="/AccountsPayable/SupplierInvoices?status=Unpaid"
+                   class="btn btn-sm @(ViewBag.Status == "Unpaid" ? "btn-danger" : "btn-outline-danger") me-1">
+                    Unpaid
+                </a>
+                <a href="/AccountsPayable/SupplierInvoices?status=PartiallyPaid"
+                   class="btn btn-sm @(ViewBag.Status == "PartiallyPaid" ? "btn-warning" : "btn-outline-warning") me-1">
+                    Partial
+                </a>
+                <a href="/AccountsPayable/SupplierInvoices?status=Paid"
+                   class="btn btn-sm @(ViewBag.Status == "Paid" ? "btn-success" : "btn-outline-success")">
+                    Paid
+                </a>
+            </div>
+
+            @if ((decimal)ViewBag.TotalUnpaid > 0)
+            {
+                <div class="alert alert-warning mb-4">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Total Outstanding to Suppliers:
+                        KES @(((decimal)ViewBag.TotalUnpaid).ToString("N0"))
+                    </strong>
+                </div>
+            }
+
+            <div class="card">
+                <div class="card-header">
+                    <strong>Supplier Invoices</strong>
+                    <span class="badge bg-primary ms-2">@Model.Count</span>
+                </div>
+                @if (!Model.Any())
+                {
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-file-invoice-dollar fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Invoices Found</h5>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Invoice No.</th>
+                                    <th>Supplier Ref</th>
+                                    <th>Supplier</th>
+                                    <th>Date</th>
+                                    <th>Due Date</th>
+                                    <th class="text-end">Amount</th>
+                                    <th class="text-end">Paid</th>
+                                    <th class="text-end">Balance</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var inv in Model)
+                                {
+                                    <tr class="@(inv.DueDate < DateTime.Today && inv.Status != SupplierInvoiceStatus.Paid ? "table-warning" : "")">
+                                        <td>
+                                            <strong>@inv.InvoiceNumber</strong>
+                                        </td>
+                                        <td class="text-muted small">
+                                            @inv.SupplierInvoiceRef
+                                        </td>
+                                        <td>@inv.Supplier.Name</td>
+                                        <td>
+                                            @inv.InvoiceDate.ToString("dd MMM yyyy")
+                                        </td>
+                                        <td class="@(inv.DueDate < DateTime.Today && inv.Status != SupplierInvoiceStatus.Paid ? "text-danger fw-bold" : "")">
+                                            @inv.DueDate.ToString("dd MMM yyyy")
+                                        </td>
+                                        <td class="text-end">
+                                            KES @inv.TotalAmount.ToString("N0")
+                                        </td>
+                                        <td class="text-end text-success">
+                                            KES @inv.TotalPaid.ToString("N0")
+                                        </td>
+                                        <td class="text-end text-danger fw-bold">
+                                            KES @inv.Balance.ToString("N0")
+                                        </td>
+                                        <td>
+                                            @switch (inv.Status)
+                                            {
+                                                case SupplierInvoiceStatus.Paid:
+                                                    <span class="badge bg-success">Paid</span>
+                                                    break;
+                                                case SupplierInvoiceStatus.PartiallyPaid:
+                                                    <span class="badge bg-warning text-dark">Partial</span>
+                                                    break;
+                                                case SupplierInvoiceStatus.Unpaid:
+                                                    <span class="badge bg-danger">Unpaid</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (inv.Status != SupplierInvoiceStatus.Paid)
+                                            {
+                                                <button class="btn btn-sm btn-success"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#payModal"
+                                                        data-invoice-id="@inv.Id"
+                                                        data-invoice-no="@inv.InvoiceNumber"
+                                                        data-balance="@inv.Balance"
+                                                        data-supplier="@inv.Supplier.Name">
+                                                    <i class="fas fa-money-bill-wave me-1"></i>Pay
+                                                </button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ADD INVOICE MODAL *@
+<div class="modal fade" id="addInvoiceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>Record Supplier Invoice
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="CreateSupplierInvoice"
+                  asp-controller="AccountsPayable" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Supplier <span class="text-danger">*</span>
+                            </label>
+                            <select name="supplierId" class="form-control"
+                                    required>
+                                <option value="">-- Select Supplier --</option>
+                                @foreach (var s in ViewBag.Suppliers)
+                                {
+                                    <option value="@s.Id">@s.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Supplier Invoice Ref <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="supplierInvoiceRef"
+                                   class="form-control"
+                                   placeholder="e.g. INV-2025-001" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                Invoice Date <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" name="invoiceDate"
+                                   class="form-control"
+                                   value="@DateTime.Today.ToString("yyyy-MM-dd")"
+                                   required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                Due Date <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" name="dueDate"
+                                   class="form-control"
+                                   value="@DateTime.Today.AddDays(30).ToString("yyyy-MM-dd")"
+                                   required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                Amount (KES) <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" name="totalAmount"
+                                   class="form-control"
+                                   placeholder="0.00" min="0.01"
+                                   step="0.01" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Expense Account
+                            </label>
+                            <select name="expenseAccountId"
+                                    class="form-control">
+                                <option value="">-- Select Account --</option>
+                                @foreach (var acc in ViewBag.Accounts)
+                                {
+                                    <option value="@acc.Id">
+                                        @acc.Code — @acc.Name
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Description
+                            </label>
+                            <input type="text" name="description"
+                                   class="form-control"
+                                   placeholder="e.g. Electricity bill June 2025" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Save Invoice
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* PAY INVOICE MODAL *@
+<div class="modal fade" id="payModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-money-bill-wave me-2"></i>Pay Invoice
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="PaySupplierInvoice"
+                  asp-controller="AccountsPayable" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="invoiceId" id="payInvoiceId" />
+                <div class="modal-body">
+                    <p class="text-muted">
+                        Paying: <strong id="payInvoiceNo"></strong><br/>
+                        Supplier: <strong id="paySupplier"></strong>
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            Amount (KES) <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" name="amount"
+                               id="payAmount" class="form-control"
+                               placeholder="0.00" min="0.01"
+                               step="0.01" required />
+                        <small class="text-muted">
+                            Balance: KES <span id="payBalance">0</span>
+                        </small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            Payment Method
+                        </label>
+                        <select name="paymentMethod" class="form-control">
+                            <option value="1">Cash</option>
+                            <option value="2">M-Pesa</option>
+                            <option value="3">Bank Transfer</option>
+                            <option value="4">Cheque</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Paid From</label>
+                        <select name="paidFromAccountId" class="form-control" required>
+    <option value="">-- Select Account --</option>
+    @foreach (var acc in (List<SMIS.Domain.Entities.Accounting.Account>)ViewBag.CashAccounts)
+    {
+        <option value="@acc.Id">@acc.Name</option>
+    }
+</select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            Reference No.
+                        </label>
+                        <input type="text" name="referenceNumber"
+                               class="form-control"
+                               placeholder="Cheque no, transfer ref" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Notes</label>
+                        <textarea name="notes" class="form-control"
+                                  rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check me-1"></i>Confirm Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.querySelectorAll('[data-bs-target="#payModal"]')
+        .forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.getElementById('payInvoiceId').value =
+                    this.dataset.invoiceId;
+                document.getElementById('payInvoiceNo').textContent =
+                    this.dataset.invoiceNo;
+                document.getElementById('paySupplier').textContent =
+                    this.dataset.supplier;
+                document.getElementById('payBalance').textContent =
+                    parseFloat(this.dataset.balance).toFixed(2);
+                document.getElementById('payAmount').max =
+                    this.dataset.balance;
+                document.getElementById('payAmount').value =
+                    this.dataset.balance;
+            });
+        });
+</script>
+}

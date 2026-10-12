@@ -1,0 +1,60 @@
+@{
+    ViewData["Title"] = "New Newsletter Post";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-pen me-2 text-primary"></i>
+                    New Newsletter Post
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Newsletter" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="card">
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Title <span class="text-danger">*</span></label>
+                            <input type="text" name="title" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Content <span class="text-danger">*</span></label>
+                            <textarea name="content" class="form-control" rows="8" required></textarea>
+                        </div>
+                        <div class="form-check mb-4">
+                            <input type="checkbox" name="publishNow" value="true"
+                                   class="form-check-input" id="publishNow" checked />
+                            <label class="form-check-label" for="publishNow">
+                                Publish immediately (visible to all parents right away)
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Save Post
+                        </button>
+                        <a href="/Newsletter" class="btn btn-outline-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

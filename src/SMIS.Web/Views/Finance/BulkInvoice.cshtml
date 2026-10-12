@@ -1,0 +1,207 @@
+@{
+    ViewData["Title"] = "Bulk Invoice Generation";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-layer-group me-2 text-primary"></i>
+                    Bulk Invoice Generation
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Finance/Invoices"
+                   class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Invoices
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show mb-4">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="row g-4">
+                @* Generate Bulk Invoices *@
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-magic me-2 text-primary"></i>
+                            <strong>Generate Bulk Invoices</strong>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="alert alert-info small">
+                                <i class="fas fa-info-circle me-1"></i>
+                                This will automatically generate invoices for all
+                                active students based on their class fee structures.
+                                Students who already have invoices for the selected
+                                term will be skipped.
+                            </div>
+                            <form asp-action="GenerateBulkInvoices"
+                                  asp-controller="Finance" method="post">
+                                @Html.AntiForgeryToken()
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        Select Term <span class="text-danger">*</span>
+                                    </label>
+                                    <select name="academicTermId" class="form-control"
+                                            id="termSelect" onchange="updateYear()"
+                                            required>
+                                        <option value="">-- Select Term --</option>
+                                        @foreach (var term in ViewBag.Terms)
+                                        {
+                                            <option value="@term.Id"
+                                                    data-year="@term.AcademicYearId">
+                                                @term.AcademicYear.Name - @term.Name
+                                            </option>
+                                        }
+                                    </select>
+                                    <input type="hidden" name="academicYearId"
+                                           id="yearId" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        Select Class
+                                    </label>
+                                    <select name="classLevelId" class="form-control">
+                                        <option value="">
+                                            All Classes (Generate for entire school)
+                                        </option>
+                                        @foreach (var cls in ViewBag.Classes)
+                                        {
+                                            <option value="@cls.Id">@cls.Name</option>
+                                        }
+                                    </select>
+                                    <small class="text-muted">
+                                        Leave blank to generate for ALL classes
+                                    </small>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-magic me-2"></i>
+                                    Generate Bulk Invoices
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                @* Bulk Download *@
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-download me-2 text-success"></i>
+                            <strong>Bulk Download Invoices</strong>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="alert alert-success small">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Download all invoices for a specific class and term
+                                as a single PDF file for printing or sharing.
+                            </div>
+                            <form method="get" action="/Finance/DownloadBulkInvoices">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        Select Term <span class="text-danger">*</span>
+                                    </label>
+                                    <select name="termId" class="form-control" required>
+                                        <option value="">-- Select Term --</option>
+                                        @foreach (var term in ViewBag.Terms)
+                                        {
+                                            <option value="@term.Id">
+                                                @term.AcademicYear.Name - @term.Name
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        Select Class
+                                    </label>
+                                    <select name="classLevelId" class="form-control">
+                                        <option value="">All Classes</option>
+                                        @foreach (var cls in ViewBag.Classes)
+                                        {
+                                            <option value="@cls.Id">@cls.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fas fa-download me-2"></i>
+                                    Download as PDF
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    @* Quick Tips *@
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <i class="fas fa-lightbulb me-2 text-warning"></i>
+                            <strong>How It Works</strong>
+                        </div>
+                        <div class="card-body p-4">
+                            <ol class="mb-0 small">
+                                <li class="mb-2">
+                                    Set up <a href="/Finance/FeeCategories">Fee Categories</a>
+                                    (Tuition, Activity etc.)
+                                </li>
+                                <li class="mb-2">
+                                    Set up <a href="/Finance/FeeStructures">Fee Structures</a>
+                                    (amount per class)
+                                </li>
+                                <li class="mb-2">
+                                    Select a term and class above
+                                </li>
+                                <li class="mb-2">
+                                    Click <strong>Generate Bulk Invoices</strong>
+                                </li>
+                                <li class="mb-2">
+                                    Download or print all invoices at once
+                                </li>
+                                <li>
+                                    Record payments as students pay
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function updateYear() {
+        const termSelect = document.getElementById('termSelect');
+        const selected = termSelect.options[termSelect.selectedIndex];
+        document.getElementById('yearId').value = selected.dataset.year || '';
+    }
+</script>
+}

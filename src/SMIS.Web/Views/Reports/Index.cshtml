@@ -1,0 +1,352 @@
+@{
+    ViewData["Title"] = "Reports Centre";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-chart-bar me-2 text-primary"></i>
+                    Reports Centre
+                </span>
+            </div>
+            <div class="header-right">
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+
+            @* FINANCIAL REPORTS *@
+            <div class="d-flex align-items-center mb-3">
+                <div style="width:4px;height:24px;background:#1a56db;
+                            border-radius:2px;" class="me-2"></div>
+                <h5 class="fw-bold text-primary mb-0">Financial Reports</h5>
+            </div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <a href="/Reports/FeeCollection"
+                       class="card text-decoration-none h-100
+                              border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="stat-icon green mb-3">
+                                <i class="fas fa-hand-holding-usd"></i>
+                            </div>
+                            <h6 class="fw-bold">Fee Collection</h6>
+                            <p class="text-muted small mb-0">
+                                All payments by date range, term or student
+                            </p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/Reports/OutstandingFees"
+                       class="card text-decoration-none h-100
+                              border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="stat-icon orange mb-3">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <h6 class="fw-bold">Outstanding Fees</h6>
+                            <p class="text-muted small mb-0">
+                                Students with unpaid balances
+                            </p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/Reports/DailyCollection"
+                       class="card text-decoration-none h-100
+                              border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="stat-icon blue mb-3">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <h6 class="fw-bold">Daily Collection</h6>
+                            <p class="text-muted small mb-0">
+                                Fee collection for any specific date
+                            </p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/Reports/StudentStatement"
+                       class="card text-decoration-none h-100
+                              border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="stat-icon purple mb-3">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <h6 class="fw-bold">Student Statement</h6>
+                            <p class="text-muted small mb-0">
+                                Full fee statement per student
+                            </p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            @* ACADEMIC REPORTS *@
+            <div class="d-flex align-items-center mb-3">
+                <div style="width:4px;height:24px;background:#057a55;
+                            border-radius:2px;" class="me-2"></div>
+                <h5 class="fw-bold text-success mb-0">Academic Reports</h5>
+            </div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <a href="/Reports/AttendanceSummary"
+                       class="card text-decoration-none h-100
+                              border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="stat-icon blue mb-3">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <h6 class="fw-bold">Attendance Summary</h6>
+                            <p class="text-muted small mb-0">
+                                Attendance by class, term or student
+                            </p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/Reports/CBCPerformance"
+                       class="card text-decoration-none h-100
+                              border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="stat-icon purple mb-3">
+                                <i class="fas fa-chart-pie"></i>
+                            </div>
+                            <h6 class="fw-bold">CBC Performance</h6>
+                            <p class="text-muted small mb-0">
+                                Assessment results by subject
+                            </p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/Finance/BulkInvoice"
+                       class="card text-decoration-none h-100
+                              border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="stat-icon blue mb-3">
+                                <i class="fas fa-file-invoice"></i>
+                            </div>
+                            <h6 class="fw-bold">Bulk Invoices</h6>
+                            <p class="text-muted small mb-0">
+                                Generate & download bulk invoices
+                            </p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/CBC"
+                       class="card text-decoration-none h-100
+                              border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="stat-icon green mb-3">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <h6 class="fw-bold">Report Cards</h6>
+                            <p class="text-muted small mb-0">
+                                CBC report cards per student or bulk
+                            </p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            @* STUDENT REPORTS *@
+            <div class="d-flex align-items-center mb-3">
+                <div style="width:4px;height:24px;background:#d97706;
+                            border-radius:2px;" class="me-2"></div>
+                <h5 class="fw-bold text-warning mb-0">Student Reports</h5>
+            </div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <a href="/Reports/StudentEnrollment"
+                       class="card text-decoration-none h-100
+                              border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="stat-icon blue mb-3">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <h6 class="fw-bold">Student Enrollment</h6>
+                            <p class="text-muted small mb-0">
+                                Enrollment by class and gender
+                            </p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/Reports/ClassList"
+                       class="card text-decoration-none h-100
+                              border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="stat-icon green mb-3">
+                                <i class="fas fa-list"></i>
+                            </div>
+                            <h6 class="fw-bold">Class List</h6>
+                            <p class="text-muted small mb-0">
+                                Printable student class register
+                            </p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            @* OPERATIONAL REPORTS *@
+            <div class="d-flex align-items-center mb-3">
+                <div style="width:4px;height:24px;background:#0891b2;
+                            border-radius:2px;" class="me-2"></div>
+                <h5 class="fw-bold text-info mb-0">Operational Reports</h5>
+            </div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <a href="/Reports/LibraryReport"
+                       class="card text-decoration-none h-100
+                              border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="stat-icon purple mb-3">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <h6 class="fw-bold">Library Report</h6>
+                            <p class="text-muted small mb-0">
+                                Books, issues, returns and overdue
+                            </p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+@* ACCOUNTING REPORTS *@
+<div class="d-flex align-items-center mb-3">
+    <div style="width:4px;height:24px;background:#1a56db;
+                border-radius:2px;" class="me-2"></div>
+    <h5 class="fw-bold text-primary mb-0">Accounting Reports</h5>
+</div>
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <a href="/Accounting/IncomeExpenditure"
+           class="card text-decoration-none h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="stat-icon green mb-3">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h6 class="fw-bold">Income & Expenditure</h6>
+                <p class="text-muted small mb-0">
+                    Revenue vs expenses statement
+                </p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="/Accounting/BalanceSheet"
+           class="card text-decoration-none h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="stat-icon blue mb-3">
+                    <i class="fas fa-columns"></i>
+                </div>
+                <h6 class="fw-bold">Balance Sheet</h6>
+                <p class="text-muted small mb-0">
+                    Assets, liabilities and equity
+                </p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="/Accounting/TrialBalance"
+           class="card text-decoration-none h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="stat-icon orange mb-3">
+                    <i class="fas fa-balance-scale"></i>
+                </div>
+                <h6 class="fw-bold">Trial Balance</h6>
+                <p class="text-muted small mb-0">
+                    Debit and credit balances
+                </p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="/AccountsPayable/Expenses"
+           class="card text-decoration-none h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="stat-icon purple mb-3">
+                    <i class="fas fa-receipt"></i>
+                </div>
+                <h6 class="fw-bold">Expense Report</h6>
+                <p class="text-muted small mb-0">
+                    All recorded expenses
+                </p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="/Payroll/Runs"
+           class="card text-decoration-none h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="stat-icon blue mb-3">
+                    <i class="fas fa-money-check-alt"></i>
+                </div>
+                <h6 class="fw-bold">Payroll Reports</h6>
+                <p class="text-muted small mb-0">
+                    Staff salary history
+                </p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="/AccountsPayable/SupplierInvoices"
+           class="card text-decoration-none h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="stat-icon orange mb-3">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <h6 class="fw-bold">Supplier Report</h6>
+                <p class="text-muted small mb-0">
+                    Supplier invoices and payments
+                </p>
+            </div>
+        </a>
+    </div>
+</div>
+
+            @* SYSTEM REPORTS *@
+            <div class="d-flex align-items-center mb-3">
+                <div style="width:4px;height:24px;background:#dc2626;
+                            border-radius:2px;" class="me-2"></div>
+                <h5 class="fw-bold text-danger mb-0">System Reports</h5>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <a href="/Reports/AuditTrail"
+                       class="card text-decoration-none h-100
+                              border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="stat-icon orange mb-3">
+                                <i class="fas fa-history"></i>
+                            </div>
+                            <h6 class="fw-bold">Audit Trail</h6>
+                            <p class="text-muted small mb-0">
+                                Full system activity log
+                            </p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

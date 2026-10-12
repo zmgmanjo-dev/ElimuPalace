@@ -1,0 +1,201 @@
+@{
+    ViewData["Title"] = "Library Report";
+}
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-book me-2 text-primary"></i>
+                    Library Report
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Reports/LibraryReportPdf?download=false" target="_blank" class="btn btn-outline-primary btn-sm me-2">
+    <i class="fas fa-eye me-1"></i> Preview
+</a>
+<a href="/Reports/LibraryReportPdf?download=true" class="btn btn-danger btn-sm me-2">
+    <i class="fas fa-file-pdf me-1"></i> Download
+</a>
+                <button onclick="window.print()"
+                        class="btn btn-outline-primary btn-sm me-2">
+                    <i class="fas fa-print me-1"></i> Print
+                </button>
+                <a href="/Reports" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+        <div class="content-area">
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6 col-xl-2">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@ViewBag.TotalBooks</div>
+                            <div class="stat-label">Book Titles</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-2">
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-copy"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@ViewBag.TotalCopies</div>
+                            <div class="stat-label">Total Copies</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-2">
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@ViewBag.AvailableCopies</div>
+                            <div class="stat-label">Available</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-2">
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-hand-holding-heart"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@ViewBag.IssuedBooks</div>
+                            <div class="stat-label">Issued</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-2">
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@ViewBag.OverdueBooks</div>
+                            <div class="stat-label">Overdue</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-2">
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-undo"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@ViewBag.ReturnedThisMonth</div>
+                            <div class="stat-label">Returned (Month)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <strong>Books by Category</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th class="text-center">Book Titles</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cat in ViewBag.BooksByCategory)
+                            {
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-tag text-primary me-2"></i>
+                                        @cat.Name
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">
+                                            @cat.Books.Count
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <strong>Recent Book Issues</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Book</th>
+                                <th>Borrower</th>
+                                <th>Issue Date</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var issue in ViewBag.RecentIssues)
+                            {
+                                <tr>
+                                    <td><strong>@issue.Book.Title</strong></td>
+                                    <td>
+                                        @if (issue.Student != null)
+                                        {
+                                            @issue.Student.FullName
+                                        }
+                                        else
+                                        {
+                                            @issue.StaffName
+                                        }
+                                    </td>
+                                    <td>
+                                        @issue.IssueDate.ToString("dd MMM yyyy")
+                                    </td>
+                                    <td>
+                                        @issue.DueDate.ToString("dd MMM yyyy")
+                                    </td>
+                                    <td>
+                                        @switch (issue.Status)
+                                        {
+                                            case SMIS.Domain.Entities.Library.BookIssueStatus.Issued:
+                                                <span class="badge bg-primary">Issued</span>
+                                                break;
+                                            case SMIS.Domain.Entities.Library.BookIssueStatus.Returned:
+                                                <span class="badge bg-success">Returned</span>
+                                                break;
+                                            case SMIS.Domain.Entities.Library.BookIssueStatus.Overdue:
+                                                <span class="badge bg-danger">Overdue</span>
+                                                break;
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,278 @@
+@model List<SMIS.Domain.Entities.Finance.FeePayment>
+@using SMIS.Domain.Entities.Finance
+@{
+    ViewData["Title"] = "Fee Collection Report";
+    var school = ViewBag.School as SMIS.Domain.Entities.School.SchoolProfile;
+    ViewBag.ReportTitle = "Fee Collection Report";
+    ViewBag.ReportSubtitle = $"Period: {((DateTime)ViewBag.FromDate).ToString("dd MMM yyyy")} — {((DateTime)ViewBag.ToDate).ToString("dd MMM yyyy")}";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header d-print-none">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-hand-holding-usd me-2 text-primary"></i>
+                    Fee Collection Report
+                </span>
+            </div>
+            <div class="header-right">
+    <a href="/Reports/FeeCollectionPdf?fromDate=@((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd")&toDate=@((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd")&download=false"
+       target="_blank"
+       class="btn btn-outline-primary btn-sm me-2">
+        <i class="fas fa-eye me-1"></i> Preview
+    </a>
+    <a href="/Reports/FeeCollectionPdf?fromDate=@((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd")&toDate=@((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd")&download=true"
+       class="btn btn-danger btn-sm me-2">
+        <i class="fas fa-file-pdf me-1"></i> Download
+    </a>
+    <button onclick="window.print()" class="btn btn-success btn-sm me-2">
+        <i class="fas fa-print me-1"></i> Print
+    </button>
+    <a href="/Reports/ExportFeeCollection?fromDate=@((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd")&toDate=@((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd")"
+       class="btn btn-outline-success btn-sm me-2">
+        <i class="fas fa-file-csv me-1"></i> Export CSV
+    </a>
+    <a href="/Reports" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Back
+    </a>
+    <div class="user-avatar ms-2">
+        @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+    </div>
+    <form asp-action="Logout" asp-controller="Account" method="post" class="d-inline">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="header-btn" title="Logout">
+            <i class="fas fa-sign-out-alt"></i>
+        </button>
+    </form>
+</div>
+        </header>
+
+        <div class="content-area">
+            @* Print Header *@
+            @await Html.PartialAsync("_PrintHeader")
+
+            @* Filters — hidden on print *@
+            <div class="card mb-4 d-print-none">
+                <div class="card-body p-3">
+                    <div class="row g-2">
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold">From</label>
+                            <input type="date" id="fromDate" class="form-control"
+                                   value="@((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold">To</label>
+                            <input type="date" id="toDate" class="form-control"
+                                   value="@((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Term</label>
+                            <select id="termSelect" class="form-control">
+                                <option value="">All Terms</option>
+                                @foreach (var term in ViewBag.Terms)
+                                {
+                                    if (ViewBag.TermId != null &&
+                                        ViewBag.TermId == term.Id)
+                                    {
+                                        <option value="@term.Id" selected>
+                                            @term.AcademicYear.Name - @term.Name
+                                        </option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@term.Id">
+                                            @term.AcademicYear.Name - @term.Name
+                                        </option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Student</label>
+                            <select id="studentSelect" class="form-control">
+                                <option value="">All Students</option>
+                                @foreach (var s in ViewBag.Students)
+                                {
+                                    if (ViewBag.StudentId != null &&
+                                        ViewBag.StudentId == s.Id)
+                                    {
+                                        <option value="@s.Id" selected>
+                                            @s.AdmissionNumber — @s.FullName
+                                        </option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@s.Id">
+                                            @s.AdmissionNumber — @s.FullName
+                                        </option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary w-100"
+                                    onclick="applyFilter()">
+                                <i class="fas fa-search me-1"></i> Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Summary Cards *@
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.TotalCollected).ToString("N0"))
+                            </div>
+                            <div class="stat-label">Total Collected</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.CashTotal).ToString("N0"))
+                            </div>
+                            <div class="stat-label">Cash</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.MpesaTotal).ToString("N0"))
+                            </div>
+                            <div class="stat-label">M-Pesa</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-university"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.BankTotal).ToString("N0"))
+                            </div>
+                            <div class="stat-label">Bank</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Table *@
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <span>
+                        <i class="fas fa-list me-2 text-primary"></i>
+                        <strong>Payment Records</strong>
+                        <span class="badge bg-primary ms-2">@Model.Count</span>
+                    </span>
+                </div>
+                @if (!Model.Any())
+                {
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-money-bill-wave fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Payments Found</h5>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered mb-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Receipt No.</th>
+                                    <th>Date</th>
+                                    <th>Student</th>
+                                    <th>Class</th>
+                                    <th>Method</th>
+                                    <th>Reference</th>
+                                    <th class="text-end">Amount (KES)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.Count; i++)
+                                {
+                                    var p = Model[i];
+                                    <tr>
+                                        <td>@(i + 1)</td>
+                                        <td>
+                                            <span class="badge bg-success">
+                                                @p.ReceiptNumber
+                                            </span>
+                                        </td>
+                                        <td>@p.PaymentDate.ToString("dd MMM yyyy")</td>
+                                        <td>
+                                            <strong>@p.Student.FullName</strong>
+                                            <small class="text-muted d-block d-print-none">
+                                                @p.Student.AdmissionNumber
+                                            </small>
+                                        </td>
+                                        <td>@(p.Student.ClassLevel?.Name ?? "-")</td>
+                                        <td>@p.PaymentMethod</td>
+                                        <td class="text-muted small">
+                                            @(p.ReferenceNumber ?? "-")
+                                        </td>
+                                        <td class="text-end fw-bold">
+                                            @p.Amount.ToString("N0")
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="7" class="fw-bold text-end">
+                                        TOTAL:
+                                    </td>
+                                    <td class="text-end fw-bold fs-6">
+                                        KES @Model.Sum(p => p.Amount).ToString("N0")
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <div class="card-footer d-print-block text-muted small">
+                        Report generated by SMIS |
+                        @DateTime.Now.ToString("dd MMM yyyy HH:mm") |
+                        @(school?.Name ?? "")
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function applyFilter() {
+        const from = document.getElementById('fromDate').value;
+        const to = document.getElementById('toDate').value;
+        const termId = document.getElementById('termSelect').value;
+        const studentId = document.getElementById('studentSelect').value;
+        let url = '/Reports/FeeCollection?fromDate=' + from + '&toDate=' + to;
+        if (termId) url += '&termId=' + termId;
+        if (studentId) url += '&studentId=' + studentId;
+        window.location = url;
+    }
+</script>
+}

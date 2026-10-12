@@ -1,0 +1,199 @@
+@{
+    var assessments = ViewBag.RecentAssessments as List<SMIS.Domain.Entities.Academic.CBCAssessment>;
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <a href="/Students" class="text-decoration-none">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-user-graduate"></i></div>
+                <div>
+                    <div class="stat-value">@ViewBag.TotalStudents</div>
+                    <div class="stat-label">Total Students</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a href="/Attendance" class="text-decoration-none">
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-calendar-check"></i></div>
+                <div>
+                    <div class="stat-value">@ViewBag.TodayPresent</div>
+                    <div class="stat-label">Present Today</div>
+                    <small class="text-muted">@ViewBag.TodayAbsent absent</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a href="/Attendance" class="text-decoration-none">
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fas fa-clipboard-list"></i></div>
+                <div>
+                    <div class="stat-value">@ViewBag.ClassesWithAttendanceToday</div>
+                    <div class="stat-label">Classes Marked Today</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a href="/CBC" class="text-decoration-none">
+            <div class="stat-card">
+                <div class="stat-icon purple"><i class="fas fa-book-open"></i></div>
+                <div>
+                    <div class="stat-value">@(assessments?.Count ?? 0)</div>
+                    <div class="stat-label">Recent Assessments</div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+@* Charts — Attendance + Performance *@
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="fas fa-chart-pie me-2 text-primary"></i><strong>Today's Attendance</strong>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="teacherAttendanceChart" width="200" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="fas fa-chart-bar me-2 text-primary"></i><strong>This Term's Performance</strong>
+            </div>
+            <div class="card-body">
+                <canvas id="teacherPerformanceChart" height="140"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-12">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="fas fa-bolt me-2 text-primary"></i><strong>Quick Actions</strong>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-6 col-md-3">
+                        <a href="/Attendance" class="btn btn-outline-success w-100 py-3">
+                            <i class="fas fa-clipboard-check d-block fa-lg mb-1"></i>Take Attendance
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <a href="/CBC" class="btn btn-outline-info w-100 py-3">
+                            <i class="fas fa-book-open d-block fa-lg mb-1"></i>CBC Assessment
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <a href="/Students" class="btn btn-outline-primary w-100 py-3">
+                            <i class="fas fa-user-graduate d-block fa-lg mb-1"></i>View Students
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <a href="/Reports/CBCPerformance" class="btn btn-outline-secondary w-100 py-3">
+                            <i class="fas fa-chart-bar d-block fa-lg mb-1"></i>Performance Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-history me-2 text-success"></i><strong>Recent Assessments Entered</strong>
+    </div>
+    @if (assessments == null || !assessments.Any())
+    {
+        <div class="card-body text-center py-3">
+            <p class="text-muted mb-0">No recent assessment activity.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <tbody>
+                    @foreach (var a in assessments)
+                    {
+                        <tr>
+                            <td><strong>@a.Student.FullName</strong></td>
+                            <td>@a.Subject.Name</td>
+                            <td><span class="badge bg-info text-dark">@a.PerformanceLevel</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<script>
+    try {
+        new Chart(document.getElementById('teacherAttendanceChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Present', 'Absent', 'Not Marked'],
+                datasets: [{
+                    data: [
+                        @(ViewBag.TodayPresent ?? 0),
+                        @(ViewBag.TodayAbsent ?? 0),
+                        @(Math.Max(0, (int)(ViewBag.TotalStudents ?? 0) -
+                            (int)(ViewBag.TodayPresent ?? 0) -
+                            (int)(ViewBag.TodayAbsent ?? 0)))
+                    ],
+                    backgroundColor: ['#057a55', '#dc2626', '#e5e7eb'],
+                    borderWidth: 2
+                }]
+            },
+            options: { responsive: false, plugins: { legend: { position: 'bottom' } } }
+        });
+    } catch(e) { console.log('Teacher attendance chart error:', e); }
+
+    @{
+        var perfLabels = new List<string>();
+        var perfCounts = new List<int>();
+        try
+        {
+            var perf = ViewBag.PerformanceSummary as IEnumerable<dynamic>;
+            if (perf != null)
+            {
+                foreach (var p in perf)
+                {
+                    perfLabels.Add((string)(p.Level?.ToString() ?? "Unknown"));
+                    perfCounts.Add((int)p.Count);
+                }
+            }
+        }
+        catch { }
+    }
+
+    try {
+        new Chart(document.getElementById('teacherPerformanceChart'), {
+            type: 'bar',
+            data: {
+                labels: [@Html.Raw(string.Join(",", perfLabels.Select(l => $"'{l}'")))],
+                datasets: [{
+                    label: 'Assessments',
+                    data: [@string.Join(",", perfCounts)],
+                    backgroundColor: ['#1a56db','#057a55','#d97706','#dc2626','#7c3aed'],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    } catch(e) { console.log('Teacher performance chart error:', e); }
+</script>

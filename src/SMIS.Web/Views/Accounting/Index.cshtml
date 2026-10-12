@@ -1,0 +1,245 @@
+@using SMIS.Domain.Entities.Accounting
+@{
+    ViewData["Title"] = "Accounting";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-calculator me-2 text-primary"></i>
+                    Accounting Module
+                </span>
+            </div>
+            <div class="header-right">
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-sitemap"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@ViewBag.TotalAccounts</div>
+                            <div class="stat-label">Accounts</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@ViewBag.PostedEntries</div>
+                            <div class="stat-label">Posted Entries</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@ViewBag.DraftEntries</div>
+                            <div class="stat-label">Draft Entries</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@ViewBag.TotalJournalEntries</div>
+                            <div class="stat-label">Total Entries</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Quick Actions *@
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <a href="/Accounting/ChartOfAccounts"
+                       class="card text-decoration-none border-0 shadow-sm">
+                        <div class="card-body p-4 text-center">
+                            <i class="fas fa-sitemap fa-2x text-primary mb-2"></i>
+                            <h6 class="fw-bold">Chart of Accounts</h6>
+                            <p class="text-muted small mb-0">
+                                Manage account codes
+                            </p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/Accounting/CreateJournalEntry"
+                       class="card text-decoration-none border-0 shadow-sm">
+                        <div class="card-body p-4 text-center">
+                            <i class="fas fa-plus-circle fa-2x text-success mb-2"></i>
+                            <h6 class="fw-bold">New Journal Entry</h6>
+                            <p class="text-muted small mb-0">
+                                Post debit/credit entry
+                            </p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/Accounting/GeneralLedger"
+                       class="card text-decoration-none border-0 shadow-sm">
+                        <div class="card-body p-4 text-center">
+                            <i class="fas fa-list-alt fa-2x text-warning mb-2"></i>
+                            <h6 class="fw-bold">General Ledger</h6>
+                            <p class="text-muted small mb-0">
+                                View account transactions
+                            </p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/Accounting/Cashbook"
+                       class="card text-decoration-none border-0 shadow-sm">
+                        <div class="card-body p-4 text-center">
+                            <i class="fas fa-money-bill-wave fa-2x text-success mb-2"></i>
+                            <h6 class="fw-bold">Cashbook</h6>
+                            <p class="text-muted small mb-0">
+                                Record receipts & payments
+                            </p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/Accounting/StudentLedger"
+                       class="card text-decoration-none border-0 shadow-sm">
+                        <div class="card-body p-4 text-center">
+                            <i class="fas fa-user-tag fa-2x text-info mb-2"></i>
+                            <h6 class="fw-bold">Student Ledger</h6>
+                            <p class="text-muted small mb-0">
+                                Per-student fee account
+                            </p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/Accounting/TrialBalance"
+                       class="card text-decoration-none border-0 shadow-sm">
+                        <div class="card-body p-4 text-center">
+                            <i class="fas fa-balance-scale fa-2x text-danger mb-2"></i>
+                            <h6 class="fw-bold">Trial Balance</h6>
+                            <a href="/Payroll/Staff" class="nav-item-link">
+                <i class="fas fa-money-check-alt"></i> Payroll
+            </a>
+            <a href="/AccountsPayable" class="nav-item-link">
+                <i class="fas fa-file-invoice"></i> Accounts Payable
+            </a>
+                            <p class="text-muted small mb-0">
+                                Check debit/credit balance
+                            </p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            @* Recent Entries *@
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <span>
+                        <i class="fas fa-history me-2 text-primary"></i>
+                        <strong>Recent Journal Entries</strong>
+                    </span>
+                    <a href="/Accounting/JournalEntries"
+                       class="btn btn-sm btn-outline-primary">
+                        View All
+                    </a>
+                </div>
+                @if (ViewBag.RecentEntries == null ||
+                     ((List<JournalEntry>)ViewBag.RecentEntries).Count == 0)
+                {
+                    <div class="card-body text-center py-4">
+                        <p class="text-muted">No journal entries yet.</p>
+                        <a href="/Accounting/CreateJournalEntry"
+                           class="btn btn-primary btn-sm">
+                            Create First Entry
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Entry No.</th>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Type</th>
+                                    <th class="text-end">Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var entry in
+                                    (List<JournalEntry>)ViewBag.RecentEntries)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a href="/Accounting/JournalEntryDetails/@entry.Id"
+                                               class="fw-bold">
+                                                @entry.EntryNumber
+                                            </a>
+                                        </td>
+                                        <td>
+                                            @entry.EntryDate.ToString("dd MMM yyyy")
+                                        </td>
+                                        <td>@entry.Description</td>
+                                        <td>
+                                            <span class="badge bg-light text-dark">
+                                                @entry.EntryType
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            KES @entry.Lines.Sum(l => l.DebitAmount).ToString("N0")
+                                        </td>
+                                        <td>
+                                            @switch (entry.Status)
+                                            {
+                                                case JournalEntryStatus.Posted:
+                                                    <span class="badge bg-success">Posted</span>
+                                                    break;
+                                                case JournalEntryStatus.Draft:
+                                                    <span class="badge bg-warning text-dark">Draft</span>
+                                                    break;
+                                                case JournalEntryStatus.Reversed:
+                                                    <span class="badge bg-secondary">Reversed</span>
+                                                    break;
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,119 @@
+@model SMIS.Domain.Entities.Students.Student
+@using SMIS.Domain.Enums
+@{
+    ViewData["Title"] = "Change Student Status";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-user-slash me-2 text-danger"></i>Change Status
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Students" class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Students
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-user me-2 text-primary"></i>
+                    Student Details
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label text-muted">Admission No.</label>
+                            <div class="fw-bold">@Model.AdmissionNumber</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted">Full Name</label>
+                            <div class="fw-bold">@Model.FullName</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted">Class</label>
+                            <div class="fw-bold">
+                                @(Model.ClassLevel?.Name ?? "-")
+                                @(Model.ClassStream != null ? $" ({Model.ClassStream.Name})" : "")
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted">Current Status</label>
+                            <div>
+                                @if (Model.Status == StudentStatus.Active)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">@Model.Status</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-exchange-alt me-2 text-danger"></i>
+                    Update Enrollment Status
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="ChangeStatus" asp-controller="Students"
+                          asp-route-id="@Model.Id" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">New Status <span class="text-danger">*</span></label>
+                                <select name="status" class="form-control" required>
+                                    @foreach (var s in Enum.GetValues<StudentStatus>())
+                                    {
+                                        <option value="@((int)s)" selected="@(s == Model.Status ? "selected" : null)">
+                                            @s
+                                        </option>
+                                    }
+                                </select>
+                                <small class="text-muted">
+                                    Active, Transferred, Withdrawn, Graduated, Deceased, or Suspended.
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Reason / Remarks</label>
+                                <input name="leaveReason" class="form-control"
+                                       value="@Model.LeaveReason"
+                                       placeholder="e.g. Transferred to XYZ School, family relocation" />
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-danger px-4">
+                                <i class="fas fa-save me-2"></i>Update Status
+                            </button>
+                            <a href="/Students" class="btn btn-outline-secondary px-4">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

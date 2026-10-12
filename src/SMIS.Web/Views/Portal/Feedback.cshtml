@@ -1,0 +1,60 @@
+@model List<SMIS.Domain.Entities.Communication.StudentFeedback>
+@{
+    Layout = "_PortalLayout";
+    ViewData["Title"] = "Feedback";
+    var student = ViewBag.Student as SMIS.Domain.Entities.Students.Student;
+}
+
+@await Html.PartialAsync("_ChildSelector")
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-bold mb-0">Feedback — @student!.FullName</h4>
+    <a href="/Portal/Dashboard?studentId=@student.Id" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-comments me-2 text-primary"></i>
+        <strong>Conversation with School</strong>
+    </div>
+    <div class="card-body" style="max-height:500px; overflow-y:auto; background:#f9fafb;">
+        @if (!Model.Any())
+        {
+            <p class="text-muted text-center mb-0 py-4">
+                No messages yet. Start the conversation below.
+            </p>
+        }
+        else
+        {
+            @foreach (var m in Model)
+            {
+                <div class="d-flex mb-3 @(m.IsFromStaff ? "justify-content-start" : "justify-content-end")">
+                    <div class="p-3 rounded @(m.IsFromStaff ? "bg-white border" : "bg-primary text-white")"
+                         style="max-width:70%;">
+                        <div class="small fw-bold mb-1 @(m.IsFromStaff ? "text-primary" : "text-white-50")">
+                            @(m.IsFromStaff ? "School" : "You")
+                        </div>
+                        <div>@m.Message</div>
+                        <div class="small mt-1 @(m.IsFromStaff ? "text-muted" : "text-white-50")"
+                             style="font-size:11px;">
+                            @m.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+    <div class="card-footer bg-white">
+        <form asp-action="SendFeedback" method="post" class="d-flex gap-2">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="studentId" value="@student.Id" />
+            <input type="text" name="message" class="form-control"
+                   placeholder="Type your message..." required autocomplete="off" />
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </form>
+    </div>
+</div>

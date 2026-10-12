@@ -1,0 +1,369 @@
+@model List<SMIS.Domain.Entities.Finance.FeeStructure>
+@{
+    ViewData["Title"] = "Fee Structures";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-file-invoice me-2 text-primary"></i>Fee Structures
+                </span>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-primary btn-sm"
+                        data-bs-toggle="modal" data-bs-target="#addStructureModal">
+                    <i class="fas fa-plus me-1"></i> Add Fee Structure
+                </button>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show mb-4">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @* Filters *@
+            <div class="card mb-4">
+                <div class="card-body p-3">
+                    <form method="get" action="/Finance/FeeStructures" class="row g-2 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Academic Year</label>
+                            <select name="academicYearId" class="form-control" onchange="this.form.submit()">
+                                <option value="">All Years</option>
+                                @foreach (var year in (List<SMIS.Domain.Entities.School.AcademicYear>)ViewBag.AcademicYears)
+                                {
+                                    <option value="@year.Id" selected="@(ViewBag.SelectedYearId == year.Id ? "selected" : null)">
+                                        @year.Name
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Term</label>
+                            <select name="academicTermId" class="form-control" onchange="this.form.submit()">
+                                <option value="">All Terms</option>
+                                @foreach (var term in (List<SMIS.Domain.Entities.School.AcademicTerm>)ViewBag.Terms)
+                                {
+                                    <option value="@term.Id" selected="@(ViewBag.SelectedTermId == term.Id ? "selected" : null)">
+                                        @term.AcademicYear.Name - @term.Name
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Class</label>
+                            <select name="classLevelId" class="form-control" onchange="this.form.submit()">
+                                <option value="">All Classes</option>
+                                @foreach (var cls in (List<SMIS.Domain.Entities.School.ClassLevel>)ViewBag.Classes)
+                                {
+                                    <option value="@cls.Id" selected="@(ViewBag.SelectedClassId == cls.Id ? "selected" : null)">
+                                        @cls.Name
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="/Finance/FeeStructures" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-times me-1"></i> Clear Filters
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-file-invoice fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Fee Structures Found</h5>
+                        <p class="text-muted">
+                            Click <strong>"Add Fee Structure"</strong> to set fees
+                            for each class and term. Make sure you have created
+                            <a href="/Finance/FeeCategories">Fee Categories</a> first.
+                        </p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                @* Group by Academic Year, then Term *@
+                var groupedByYear = Model.GroupBy(s => s.AcademicYear.Name)
+                    .OrderByDescending(g => g.Key).ToList();
+
+                @foreach (var yearGroup in groupedByYear)
+                {
+                    <div class="d-flex align-items-center mb-2 mt-3">
+                        <div style="width:4px;height:20px;background:#1a56db;border-radius:2px;" class="me-2"></div>
+                        <h6 class="fw-bold text-primary mb-0">Academic Year: @yearGroup.Key</h6>
+                    </div>
+
+                    var groupedByTerm = yearGroup
+                        .GroupBy(s => s.AcademicTerm.Name)
+                        .OrderBy(g => g.First().AcademicTerm.TermNumber);
+
+                    @foreach (var termGroup in groupedByTerm)
+                    {
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between">
+                                <span>
+                                    <i class="fas fa-calendar-day me-2 text-success"></i>
+                                    <strong>@termGroup.Key</strong>
+                                </span>
+                                <span class="text-muted small">
+                                    @termGroup.Count() fee structures
+                                </span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Class</th>
+                                            <th>Fee Category</th>
+                                            <th class="text-end">Amount (KES)</th>
+                                            <th>Notes</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var structure in termGroup
+                                            .OrderBy(s => s.ClassLevel.OrderIndex)
+                                            .ThenBy(s => s.FeeCategory.OrderIndex))
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <i class="fas fa-door-open text-primary me-2"></i>
+                                                    @structure.ClassLevel.Name
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-light text-dark">
+                                                        @structure.FeeCategory.Name
+                                                    </span>
+                                                    @if (!structure.FeeCategory.IsActive)
+                                                    {
+                                                        <span class="badge bg-secondary ms-1">Inactive</span>
+                                                    }
+                                                </td>
+                                                <td class="text-end fw-bold text-success">
+                                                    KES @structure.Amount.ToString("N0")
+                                                </td>
+                                                <td class="text-muted small">
+                                                    @(structure.Notes ?? "-")
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex gap-1">
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-primary edit-structure-btn"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#editStructureModal"
+                                                                data-id="@structure.Id"
+                                                                data-summary="@structure.ClassLevel.Name — @structure.FeeCategory.Name (@termGroup.Key)"
+                                                                data-amount="@structure.Amount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
+                                                                data-notes="@structure.Notes"
+                                                                title="Edit">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <form asp-action="DeleteFeeStructure" asp-controller="Finance"
+                                                              method="post" class="d-inline"
+                                                              onsubmit="return confirm('Delete this fee structure? Invoices already generated are not affected.')">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@structure.Id" />
+                                                            <input type="hidden" name="returnUrl"
+                                                                   value="@(Context.Request.Path.Value + Context.Request.QueryString.Value)" />
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                                    title="Delete">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <td colspan="2" class="fw-bold">Total</td>
+                                            <td class="text-end fw-bold text-primary">
+                                                KES @termGroup.Sum(s => s.Amount).ToString("N0")
+                                            </td>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@* ADD FEE STRUCTURE MODAL *@
+<div class="modal fade" id="addStructureModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>Add Fee Structure
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="CreateFeeStructure" asp-controller="Finance" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Academic Term <span class="text-danger">*</span>
+                        </label>
+                        <select name="academicTermId" class="form-control"
+                                id="termSelect" onchange="updateYear()" required>
+                            <option value="">-- Select Term --</option>
+                            @foreach (var term in (List<SMIS.Domain.Entities.School.AcademicTerm>)ViewBag.Terms)
+                            {
+                                <option value="@term.Id" data-year="@term.AcademicYearId">
+                                    @term.AcademicYear.Name - @term.Name
+                                </option>
+                            }
+                        </select>
+                        <small class="text-muted">The academic year is set automatically from the term.</small>
+                    </div>
+                    <input type="hidden" name="academicYearId" id="yearIdInput" />
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Class <span class="text-danger">*</span>
+                        </label>
+                        <select name="classLevelId" class="form-control" required>
+                            <option value="">-- Select Class --</option>
+                            @foreach (var cls in (List<SMIS.Domain.Entities.School.ClassLevel>)ViewBag.Classes)
+                            {
+                                <option value="@cls.Id">@cls.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Fee Category <span class="text-danger">*</span>
+                        </label>
+                        <select name="feeCategoryId" class="form-control" required>
+                            <option value="">-- Select Category --</option>
+                            @foreach (var cat in (List<SMIS.Domain.Entities.Finance.FeeCategory>)ViewBag.Categories)
+                            {
+                                <option value="@cat.Id">@cat.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Amount (KES) <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" name="amount" class="form-control"
+                               placeholder="e.g. 5000" min="0" step="0.01" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <input type="text" name="notes" class="form-control"
+                               placeholder="Optional notes" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Save Structure
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* EDIT FEE STRUCTURE MODAL *@
+<div class="modal fade" id="editStructureModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>Edit Fee Structure
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="EditFeeStructure" asp-controller="Finance" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="editStructId" />
+                <input type="hidden" name="returnUrl"
+                       value="@(Context.Request.Path.Value + Context.Request.QueryString.Value)" />
+                <div class="modal-body">
+                    <p class="fw-bold mb-3" id="editStructSummary"></p>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Amount (KES) <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" name="amount" id="editStructAmount"
+                               class="form-control" min="0" step="0.01" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <input type="text" name="notes" id="editStructNotes" class="form-control" />
+                    </div>
+                    <div class="alert alert-info small mb-0">
+                        Only the amount and notes can be edited. To change the class, term or
+                        category, delete this row and add a new one.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function updateYear() {
+        const termSelect = document.getElementById('termSelect');
+        const selected = termSelect.options[termSelect.selectedIndex];
+        document.getElementById('yearIdInput').value = selected.dataset.year || '';
+    }
+
+    document.querySelectorAll('.edit-structure-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.getElementById('editStructId').value = this.dataset.id;
+            document.getElementById('editStructSummary').textContent = this.dataset.summary;
+            document.getElementById('editStructAmount').value = this.dataset.amount;
+            document.getElementById('editStructNotes').value = this.dataset.notes || '';
+        });
+    });
+</script>
+}

@@ -1,0 +1,357 @@
+@using SMIS.Domain.Entities.Accounting
+@{
+    ViewData["Title"] = "New Journal Entry";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-plus-circle me-2 text-primary"></i>
+                    New Journal Entry
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Accounting/JournalEntries"
+                   class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show mb-4">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="alert alert-info small mb-4">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Double-Entry Rule:</strong>
+                Total Debits must equal Total Credits before saving.
+                Assets & Expenses increase with Debit.
+                Liabilities, Equity & Income increase with Credit.
+            </div>
+
+            <form asp-action="CreateJournalEntry"
+                  asp-controller="Accounting" method="post"
+                  id="journalForm">
+                @Html.AntiForgeryToken()
+
+                @* Header *@
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-info-circle me-2 text-primary"></i>
+                        Entry Details
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">
+                                    Date <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" name="entryDate"
+                                       class="form-control"
+                                       value="@DateTime.Today.ToString("yyyy-MM-dd")"
+                                       required />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">
+                                    Entry Type
+                                </label>
+                                <select name="entryType" class="form-control"
+                                        asp-items="Html.GetEnumSelectList<JournalEntryType>()">
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">
+                                    Term (optional)
+                                </label>
+                                <select name="academicTermId"
+                                        class="form-control">
+                                    <option value="">None</option>
+                                    @foreach (var term in ViewBag.Terms)
+                                    {
+                                        <option value="@term.Id">
+                                            @term.AcademicYear.Name - @term.Name
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">
+                                    Reference No.
+                                </label>
+                                <input type="text" name="reference"
+                                       class="form-control"
+                                       placeholder="e.g. Cheque No, Receipt No" />
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">
+                                    Description <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" name="description"
+                                       class="form-control"
+                                       placeholder="e.g. Payment of electricity bill for June 2025"
+                                       required />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* Lines *@
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between">
+                        <span>
+                            <i class="fas fa-list me-2 text-primary"></i>
+                            <strong>Journal Lines</strong>
+                        </span>
+                        <button type="button" class="btn btn-success btn-sm"
+                                onclick="addLine()">
+                            <i class="fas fa-plus me-1"></i> Add Line
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table mb-0" id="linesTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:35%">Account</th>
+                                    <th>Narration</th>
+                                    <th style="width:15%">Debit (KES)</th>
+                                    <th style="width:15%">Credit (KES)</th>
+                                    <th style="width:5%"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="linesBody">
+                                @* 2 default lines *@
+                                <tr>
+                                    <td>
+                                        <select name="accountIds"
+                                                class="form-control form-control-sm"
+                                                required>
+                                            <option value="">-- Select Account --</option>
+                                            @foreach (var acc in ViewBag.Accounts)
+                                            {
+                                                <option value="@acc.Id">
+                                                    @acc.Code - @acc.Name
+                                                </option>
+                                            }
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="narrations"
+                                               class="form-control form-control-sm"
+                                               placeholder="Narration" />
+                                    </td>
+                                    <td>
+                                        <input type="number" name="debitAmounts"
+                                               class="form-control form-control-sm debit-input"
+                                               value="0" min="0" step="0.01"
+                                               onchange="updateTotals()" />
+                                    </td>
+                                    <td>
+                                        <input type="number" name="creditAmounts"
+                                               class="form-control form-control-sm credit-input"
+                                               value="0" min="0" step="0.01"
+                                               onchange="updateTotals()" />
+                                    </td>
+                                    <td>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                onclick="removeLine(this)">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <select name="accountIds"
+                                                class="form-control form-control-sm"
+                                                required>
+                                            <option value="">-- Select Account --</option>
+                                            @foreach (var acc in ViewBag.Accounts)
+                                            {
+                                                <option value="@acc.Id">
+                                                    @acc.Code - @acc.Name
+                                                </option>
+                                            }
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="narrations"
+                                               class="form-control form-control-sm"
+                                               placeholder="Narration" />
+                                    </td>
+                                    <td>
+                                        <input type="number" name="debitAmounts"
+                                               class="form-control form-control-sm debit-input"
+                                               value="0" min="0" step="0.01"
+                                               onchange="updateTotals()" />
+                                    </td>
+                                    <td>
+                                        <input type="number" name="creditAmounts"
+                                               class="form-control form-control-sm credit-input"
+                                               value="0" min="0" step="0.01"
+                                               onchange="updateTotals()" />
+                                    </td>
+                                    <td>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                onclick="removeLine(this)">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="2" class="fw-bold text-end">
+                                        TOTALS:
+                                    </td>
+                                    <td>
+                                        <strong id="totalDebits"
+                                                class="text-primary">
+                                            0.00
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        <strong id="totalCredits"
+                                                class="text-primary">
+                                            0.00
+                                        </strong>
+                                    </td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5">
+                                        <div id="balanceAlert"
+                                             class="alert alert-warning py-1 mb-0 small d-none">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            Entry is not balanced!
+                                            Difference:
+                                            <strong id="difference">0.00</strong>
+                                        </div>
+                                        <div id="balancedAlert"
+                                             class="alert alert-success py-1 mb-0 small d-none">
+                                            <i class="fas fa-check-circle me-1"></i>
+                                            Entry is balanced!
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fas fa-save me-2"></i>Save as Draft
+                    </button>
+                    <a href="/Accounting/JournalEntries"
+                       class="btn btn-outline-secondary px-4">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const accountOptions = `@Html.Raw(string.Join("", ((List<SMIS.Domain.Entities.Accounting.Account>)ViewBag.Accounts).Select(a => $"<option value='{a.Id}'>{a.Code} - {a.Name}</option>")))`;
+
+    function addLine() {
+        const tbody = document.getElementById('linesBody');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <select name="accountIds"
+                        class="form-control form-control-sm" required>
+                    <option value="">-- Select Account --</option>
+                    ${accountOptions}
+                </select>
+            </td>
+            <td>
+                <input type="text" name="narrations"
+                       class="form-control form-control-sm"
+                       placeholder="Narration" />
+            </td>
+            <td>
+                <input type="number" name="debitAmounts"
+                       class="form-control form-control-sm debit-input"
+                       value="0" min="0" step="0.01"
+                       onchange="updateTotals()" />
+            </td>
+            <td>
+                <input type="number" name="creditAmounts"
+                       class="form-control form-control-sm credit-input"
+                       value="0" min="0" step="0.01"
+                       onchange="updateTotals()" />
+            </td>
+            <td>
+                <button type="button"
+                        class="btn btn-sm btn-outline-danger"
+                        onclick="removeLine(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+            </td>`;
+        tbody.appendChild(row);
+    }
+
+    function removeLine(btn) {
+        const rows = document.querySelectorAll('#linesBody tr');
+        if (rows.length <= 2) {
+            alert('A journal entry needs at least 2 lines.');
+            return;
+        }
+        btn.closest('tr').remove();
+        updateTotals();
+    }
+
+    function updateTotals() {
+        let totalDr = 0, totalCr = 0;
+        document.querySelectorAll('.debit-input')
+            .forEach(i => totalDr += parseFloat(i.value) || 0);
+        document.querySelectorAll('.credit-input')
+            .forEach(i => totalCr += parseFloat(i.value) || 0);
+
+        document.getElementById('totalDebits').textContent =
+            totalDr.toFixed(2);
+        document.getElementById('totalCredits').textContent =
+            totalCr.toFixed(2);
+
+        const diff = Math.abs(totalDr - totalCr);
+        if (diff > 0.001) {
+            document.getElementById('balanceAlert')
+                .classList.remove('d-none');
+            document.getElementById('balancedAlert')
+                .classList.add('d-none');
+            document.getElementById('difference').textContent =
+                diff.toFixed(2);
+        } else {
+            document.getElementById('balanceAlert')
+                .classList.add('d-none');
+            document.getElementById('balancedAlert')
+                .classList.remove('d-none');
+        }
+    }
+</script>
+}

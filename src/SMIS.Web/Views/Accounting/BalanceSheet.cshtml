@@ -1,0 +1,234 @@
+@using SMIS.Domain.Entities.Accounting
+@{
+    ViewData["Title"] = "Balance Sheet";
+    var school = ViewBag.School as SMIS.Domain.Entities.School.SchoolProfile;
+    var asAt = (DateTime)ViewBag.AsAt;
+    var assets = ViewBag.Assets as List<Account> ?? new List<Account>();
+    var liabilities = ViewBag.Liabilities as List<Account>
+        ?? new List<Account>();
+    var equity = ViewBag.Equity as List<Account> ?? new List<Account>();
+    var balances = ViewBag.Balances as Dictionary<int, decimal>
+        ?? new Dictionary<int, decimal>();
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+            <div class="main-content">
+        <header class="top-header d-print-none">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-columns me-2 text-primary"></i>
+                    Balance Sheet
+                </span>
+            </div>
+            <div class="header-right">
+                <button onclick="window.print()"
+                        class="btn btn-success btn-sm me-2">
+                    <i class="fas fa-print me-1"></i> Print
+                </button>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @await Html.PartialAsync("_PrintHeader")
+
+            <div class="card mb-4 d-print-none">
+                <div class="card-body p-3">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">
+                                As at Date
+                            </label>
+                            <input type="date" id="asAtDate"
+                                   class="form-control"
+                                   value="@asAt.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-primary w-100"
+                                    onclick="window.location='/Accounting/BalanceSheet?asAt='+document.getElementById('asAtDate').value">
+                                <i class="fas fa-search me-1"></i> View
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header text-center">
+                    <h5 class="fw-bold mb-0">
+                        @(school?.Name ?? "School")
+                    </h5>
+                    <h6 class="fw-bold mb-0">BALANCE SHEET</h6>
+                    <p class="text-muted small mb-0">
+                        As at @asAt.ToString("dd MMMM yyyy")
+                    </p>
+                </div>
+                <div class="card-body p-0">
+                    <div class="row g-0">
+                        @* Assets *@
+                        <div class="col-md-6 border-end">
+                            <table class="table table-bordered mb-0">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th colspan="2">ASSETS</th>
+                                        <th class="text-end">KES</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var acc in assets)
+                                    {
+                                        var bal = balances.GetValueOrDefault(
+                                            acc.Id, 0);
+                                        <tr>
+                                            <td style="width:80px;">
+                                                <span class="badge bg-light text-dark">
+                                                    @acc.Code
+                                                </span>
+                                            </td>
+                                            <td>@acc.Name</td>
+                                            <td class="text-end">
+                                                @bal.ToString("N2")
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot class="table-primary">
+                                    <tr>
+                                        <td colspan="2" class="fw-bold text-end">
+                                            TOTAL ASSETS:
+                                        </td>
+                                        <td class="text-end fw-bold">
+                                            @(((decimal)ViewBag.TotalAssets).ToString("N2"))
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        @* Liabilities & Equity *@
+                        <div class="col-md-6">
+                            <table class="table table-bordered mb-0">
+                                <thead class="table-danger">
+                                    <tr>
+                                        <th colspan="2">LIABILITIES</th>
+                                        <th class="text-end">KES</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var acc in liabilities)
+                                    {
+                                        var bal = balances.GetValueOrDefault(
+                                            acc.Id, 0);
+                                        <tr>
+                                            <td style="width:80px;">
+                                                <span class="badge bg-light text-dark">
+                                                    @acc.Code
+                                                </span>
+                                            </td>
+                                            <td>@acc.Name</td>
+                                            <td class="text-end">
+                                                @bal.ToString("N2")
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot class="table-danger">
+                                    <tr>
+                                        <td colspan="2" class="fw-bold text-end">
+                                            TOTAL LIABILITIES:
+                                        </td>
+                                        <td class="text-end fw-bold">
+                                            @(((decimal)ViewBag.TotalLiabilities).ToString("N2"))
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+
+                            <table class="table table-bordered mb-0">
+                                <thead class="table-success">
+                                    <tr>
+                                        <th colspan="2">EQUITY / FUND</th>
+                                        <th class="text-end">KES</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var acc in equity)
+                                    {
+                                        var bal = balances.GetValueOrDefault(
+                                            acc.Id, 0);
+                                        <tr>
+                                            <td style="width:80px;">
+                                                <span class="badge bg-light text-dark">
+                                                    @acc.Code
+                                                </span>
+                                            </td>
+                                            <td>@acc.Name</td>
+                                            <td class="text-end">
+                                                @bal.ToString("N2")
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot class="table-success">
+                                    <tr>
+                                        <td colspan="2" class="fw-bold text-end">
+                                            TOTAL EQUITY:
+                                        </td>
+                                        <td class="text-end fw-bold">
+                                            @(((decimal)ViewBag.TotalEquity).ToString("N2"))
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+
+                            <table class="table table-bordered mb-0">
+                                <tbody>
+                                    <tr class="@(((decimal)ViewBag.TotalAssets == (decimal)ViewBag.TotalLiabilities + (decimal)ViewBag.TotalEquity ? "table-success" : "table-danger"))">
+                                        <td colspan="2" class="fw-bold text-end">
+                                            TOTAL LIABILITIES + EQUITY:
+                                        </td>
+                                        <td class="text-end fw-bold">
+                                            @(((decimal)ViewBag.TotalLiabilities +
+                                               (decimal)ViewBag.TotalEquity).ToString("N2"))
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-print-block text-center">
+                    @if ((decimal)ViewBag.TotalAssets ==
+                         (decimal)ViewBag.TotalLiabilities +
+                         (decimal)ViewBag.TotalEquity)
+                    {
+                        <span class="badge bg-success">✓ BALANCED</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">
+                            ✗ NOT BALANCED — Difference: KES
+                            @Math.Abs((decimal)ViewBag.TotalAssets -
+                                ((decimal)ViewBag.TotalLiabilities +
+                                 (decimal)ViewBag.TotalEquity)).ToString("N2")
+                        </span>
+                    }
+                    <span class="text-muted small ms-3">
+                        @(school?.Name ?? "") |
+                        Generated: @DateTime.Now.ToString("dd MMM yyyy HH:mm")
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

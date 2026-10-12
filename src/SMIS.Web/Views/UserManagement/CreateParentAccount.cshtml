@@ -1,0 +1,104 @@
+@{
+    ViewData["Title"] = "Create Parent Account";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-user-plus me-2 text-primary"></i>
+                    Create Parent Account
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/UserManagement/ParentAccounts" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show mb-4">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="card">
+                <div class="card-header">
+                    <strong>Parent Account Details</strong>
+                </div>
+                <div class="card-body">
+                    <form asp-action="CreateParentAccount" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Full Name <span class="text-danger">*</span></label>
+                                <input type="text" name="fullName" class="form-control" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Email <span class="text-danger">*</span></label>
+                                <input type="email" name="email" class="form-control" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Password <span class="text-danger">*</span></label>
+                                <input type="password" name="password" class="form-control" required minlength="6" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Phone</label>
+                                <input type="text" name="phone" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Relationship</label>
+                                <select name="relationship" class="form-control">
+                                    <option value="Father">Father</option>
+                                    <option value="Mother">Mother</option>
+                                    <option value="Guardian">Guardian</option>
+                                </select>
+                                <small class="text-muted">Applied to all children selected below</small>
+                            </div>
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <label class="form-label fw-bold">
+                            Link to Student(s) <span class="text-danger">*</span>
+                        </label>
+                        <p class="text-muted small">
+                            Hold Ctrl (Windows) or Cmd (Mac) to select multiple children.
+                        </p>
+                        <select name="studentIds" class="form-control" multiple size="8" required>
+                            @foreach (var s in ViewBag.Students)
+                            {
+                                <option value="@s.Id">
+                                    @s.AdmissionNumber — @s.FullName (@(s.ClassLevel?.Name ?? "-"))
+                                </option>
+                            }
+                        </select>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-1"></i> Create Parent Account
+                            </button>
+                            <a href="/UserManagement/ParentAccounts" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

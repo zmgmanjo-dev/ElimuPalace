@@ -1,0 +1,385 @@
+@model List<SMIS.Domain.Entities.Accounting.StaffPayroll>
+@using SMIS.Domain.Entities.Accounting
+@{
+    ViewData["Title"] = "Payroll Staff";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-users me-2 text-primary"></i>
+                    Payroll Staff Setup
+                </span>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-primary btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#addStaffModal">
+                    <i class="fas fa-plus me-1"></i> Add Staff
+                </button>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+<div class="card mb-3">
+    <div class="card-body p-3">
+        <div class="input-group">
+            <span class="input-group-text bg-white">
+                <i class="fas fa-search text-muted"></i>
+            </span>
+            <input type="text" id="staffSearch" class="form-control"
+                   placeholder="Search by name, staff number, or type..."
+                   onkeyup="filterStaff()" />
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <strong>Staff on Payroll</strong>
+        <span class="badge bg-primary ms-2" id="staffCount">@Model.Count</span>
+    </div>
+                @if (!Model.Any())
+                {
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Staff Added Yet</h5>
+                        <p class="text-muted">
+                            Click <strong>"Add Staff"</strong> to set up
+                            payroll for staff members.
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Staff No.</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Type</th>
+                                    <th>Employment</th>
+                                    <th class="text-end">Basic</th>
+                                    <th class="text-end">Gross</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="staffTableBody">
+                                @foreach (var s in Model)
+                                {
+                                    <tr class="staff-row">
+                                        <td>
+                                            <span class="badge bg-light text-dark">
+                                                @s.StaffNumber
+                                            </span>
+                                        </td>
+                                        <td><strong>@s.FullName</strong></td>
+                                        <td class="text-muted small">@(s.Email ?? "-")</td>
+                                        <td>
+                                            <span class="badge bg-info text-dark">
+                                                @s.StaffType
+                                            </span>
+                                        </td>
+                                        <td class="text-muted small">
+                                            @s.EmploymentType
+                                        </td>
+                                        <td class="text-end">
+                                            KES @s.BasicSalary.ToString("N0")
+                                        </td>
+                                        <td class="text-end fw-bold">
+                                            KES @s.GrossSalary.ToString("N0")
+                                        </td>
+                                        <td>
+    <div class="d-flex gap-1">
+        <a href="/Payroll/StaffDetails/@s.Id"
+           class="btn btn-sm btn-outline-primary" title="View">
+            <i class="fas fa-eye"></i>
+        </a>
+        <a href="/Payroll/EditStaff/@s.Id"
+           class="btn btn-sm btn-outline-secondary" title="Edit">
+            <i class="fas fa-edit"></i>
+        </a>
+        <form asp-action="ToggleStaffStatus" asp-controller="Payroll"
+              method="post" class="d-inline">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@s.Id" />
+            <button type="submit"
+                    class="btn btn-sm btn-outline-@(s.IsActive ? "danger" : "success")"
+                    title="@(s.IsActive ? "Deactivate" : "Reactivate")"
+                    onclick="return confirm('@(s.IsActive ? $"Deactivate {s.FullName}? They will no longer be included in future payroll runs." : $"Reactivate {s.FullName}?")')">
+                <i class="fas fa-@(s.IsActive ? "user-slash" : "user-check")"></i>
+            </button>
+        </form>
+    </div>
+</td>
+                                        <td>
+                                            @if (s.IsActive)
+                                            {
+                                                <span class="badge bg-success">Active</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Inactive</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="5" class="fw-bold text-end">
+                                        TOTAL PAYROLL:
+                                    </td>
+                                    <td class="text-end fw-bold">
+                                        KES @Model.Sum(s => s.BasicSalary).ToString("N0")
+                                    </td>
+                                    <td class="text-end fw-bold text-primary">
+                                        KES @Model.Sum(s => s.GrossSalary).ToString("N0")
+                                    </td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ADD STAFF MODAL *@
+<div class="modal fade" id="addStaffModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>Add Staff to Payroll
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="CreateStaff"
+                  asp-controller="Payroll" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+    <label class="form-label fw-bold">
+        Full Name <span class="text-danger">*</span>
+    </label>
+    <input type="text" name="fullName"
+           class="form-control" required />
+</div>
+<div class="col-md-4">
+    <label class="form-label fw-bold">Email Address</label>
+    <input type="email" name="email"
+           class="form-control" placeholder="staff@email.com" />
+</div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                Staff Type
+                            </label>
+                            <select name="staffType" class="form-control"
+                                    asp-items="Html.GetEnumSelectList<StaffPayrollType>()">
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                Employment Type
+                            </label>
+                            <select name="employmentType" class="form-control"
+                                    asp-items="Html.GetEnumSelectList<SMIS.Domain.Enums.EmploymentType>()">
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">National ID</label>
+                            <input type="text" name="nationalId"
+                                   class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">KRA PIN</label>
+                            <input type="text" name="kraPin"
+                                   class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">NSSF No.</label>
+                            <input type="text" name="nssfNumber"
+                                   class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">sha No.</label>
+                            <input type="text" name="shaNumber"
+                                   class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Bank Name</label>
+                            <input type="text" name="bankName"
+                                   class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                Bank Account No.
+                            </label>
+                            <input type="text" name="bankAccount"
+                                   class="form-control" />
+                        </div>
+
+                        <div class="col-12">
+                            <hr/>
+                            <h6 class="fw-bold text-primary">
+                                Earnings
+                            </h6>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">
+                                Basic Salary <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" name="basicSalary"
+                                   class="form-control" value="0"
+                                   min="0" step="0.01"
+                                   onchange="calcGross()" required />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">
+                                House Allow.
+                            </label>
+                            <input type="number" name="houseAllowance"
+                                   class="form-control" value="0"
+                                   min="0" step="0.01"
+                                   onchange="calcGross()" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">
+                                Transport Allow.
+                            </label>
+                            <input type="number" name="transportAllowance"
+                                   class="form-control" value="0"
+                                   min="0" step="0.01"
+                                   onchange="calcGross()" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">
+                                Medical Allow.
+                            </label>
+                            <input type="number" name="medicalAllowance"
+                                   class="form-control" value="0"
+                                   min="0" step="0.01"
+                                   onchange="calcGross()" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">
+                                Other Allowances
+                            </label>
+                            <input type="number" name="otherAllowances"
+                                   class="form-control" value="0"
+                                   min="0" step="0.01"
+                                   onchange="calcGross()" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">
+                                Gross Salary
+                            </label>
+                            <input type="text" id="grossDisplay"
+                                   class="form-control bg-light fw-bold"
+                                   readonly value="0" />
+                        </div>
+
+                        <div class="col-12">
+                            <hr/>
+                            <h6 class="fw-bold text-danger">
+                                Voluntary Deductions
+                            </h6>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                SACCO Deduction
+                            </label>
+                            <input type="number" name="saccoDeduction"
+                                   class="form-control" value="0"
+                                   min="0" step="0.01" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                Loan Deduction
+                            </label>
+                            <input type="number" name="loanDeduction"
+                                   class="form-control" value="0"
+                                   min="0" step="0.01" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">
+                                Other Deductions
+                            </label>
+                            <input type="number" name="otherDeductions"
+                                   class="form-control" value="0"
+                                   min="0" step="0.01" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Add to Payroll
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function calcGross() {
+        const fields = ['basicSalary', 'houseAllowance',
+            'transportAllowance', 'medicalAllowance', 'otherAllowances'];
+        let total = 0;
+        fields.forEach(f => {
+            const el = document.querySelector(`[name="${f}"]`);
+            if (el) total += parseFloat(el.value) || 0;
+        });
+        document.getElementById('grossDisplay').value =
+            'KES ' + total.toLocaleString();
+    }
+    function filterStaff() {
+    const query = document.getElementById('staffSearch').value.toLowerCase();
+    const rows = document.querySelectorAll('#staffTableBody .staff-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const matches = text.includes(query);
+        row.style.display = matches ? '' : 'none';
+        if (matches) visibleCount++;
+    });
+
+    document.getElementById('staffCount').textContent = visibleCount;
+}
+</script>
+}

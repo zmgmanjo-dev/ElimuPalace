@@ -1,0 +1,342 @@
+@model SMIS.Domain.Entities.Accounting.PayrollRun
+@using SMIS.Domain.Entities.Accounting
+@{
+    ViewData["Title"] = "Payroll Details";
+    var school = ViewBag.School as SMIS.Domain.Entities.School.SchoolProfile;
+    ViewBag.ReportTitle = $"Payroll — {Model.MonthName}";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header d-print-none">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-file-alt me-2 text-primary"></i>
+                    Payroll — @Model.MonthName
+                </span>
+            </div>
+            <div class="header-right">
+                <button onclick="window.print()"
+                        class="btn btn-outline-primary btn-sm me-2">
+                    <i class="fas fa-print me-1"></i> Print
+                </button>
+                @if (Model.Status == PayrollRunStatus.Draft)
+                {
+                    <form asp-action="ApprovePayroll"
+                          asp-controller="Payroll" method="post"
+                          class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit" class="btn btn-success btn-sm me-2"
+                                onclick="return confirm('Approve this payroll? A journal entry will be posted.')">
+                            <i class="fas fa-check me-1"></i> Approve & Post
+                        </button>
+                    </form>
+                }
+                @if (Model.Status == PayrollRunStatus.Approved || Model.Status == PayrollRunStatus.Paid)
+{
+    <a href="/Payroll/DownloadBulkPayslips?runId=@Model.Id"
+       class="btn btn-success btn-sm me-2" target="_blank">
+        <i class="fas fa-download me-1"></i> Download All Payslips
+    </a>
+    <form asp-action="EmailAllPayslips" asp-controller="Payroll"
+          method="post" class="d-inline">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="runId" value="@Model.Id" />
+        <button type="submit" class="btn btn-outline-success btn-sm me-2"
+                onclick="return confirm('Email payslips to all staff with an email on file?')">
+            <i class="fas fa-envelope me-1"></i> Email All Payslips
+        </button>
+    </form>
+}
+@if (Model.Status == PayrollRunStatus.Approved)
+{
+    <form asp-action="ReverseApproval" asp-controller="Payroll" method="post" class="d-inline">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+        <button type="submit" class="btn btn-outline-danger btn-sm me-2"
+                onclick="return confirm('Reverse this approval? The journal entry will be deleted and you can re-approve afterward.')">
+            <i class="fas fa-undo me-1"></i> Reverse Approval
+        </button>
+    </form>
+}
+@if (Model.Status == PayrollRunStatus.Approved)
+{
+    <button class="btn btn-success btn-sm me-2" data-bs-toggle="modal" data-bs-target="#paySalariesModal">
+        <i class="fas fa-money-check-alt me-1"></i> Pay Salaries
+    </button>
+}
+                <a href="/Payroll/Runs"
+                   class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @await Html.PartialAsync("_PrintHeader")
+
+            @* Summary *@
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@Model.Lines.Count</div>
+                            <div class="stat-label">Staff Paid</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @Model.TotalGross.ToString("N0")
+                            </div>
+                            <div class="stat-label">Gross Pay</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-minus-circle"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @Model.TotalDeductions.ToString("N0")
+                            </div>
+                            <div class="stat-label">Total Deductions</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @Model.TotalNetPay.ToString("N0")
+                            </div>
+                            <div class="stat-label">Net Pay</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <span>
+                        <strong>Payroll Register — @Model.MonthName</strong>
+                    </span>
+                    @switch (Model.Status)
+                    {
+                        case PayrollRunStatus.Approved:
+                            <span class="badge bg-success fs-6">APPROVED</span>
+                            break;
+                        case PayrollRunStatus.Draft:
+                            <span class="badge bg-warning text-dark fs-6">DRAFT</span>
+                            break;
+                        case PayrollRunStatus.Paid:
+                            <span class="badge bg-primary fs-6">PAID</span>
+                            break;
+                    }
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered mb-0"
+                           style="font-size:12px;">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th class="text-end">Basic</th>
+                                <th class="text-end">Allowances</th>
+                                <th class="text-end">Gross</th>
+                                <th class="text-end text-danger">PAYE</th>
+                                <th class="text-end text-danger">NSSF</th>
+                                <th class="text-end text-danger">SHA</th>
+                                <th class="text-end text-danger">Other</th>
+                                <th class="text-end text-danger">Total Ded.</th>
+                                <th class="text-end text-success">Net Pay</th>
+                                <th class="d-print-none">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.Lines.Count; i++)
+                            {
+                                var line = Model.Lines
+                                    .OrderBy(l => l.StaffPayroll.FullName)
+                                    .ElementAt(i);
+                                var totalDed = line.PAYE + line.NSSFEmployee +
+                                    line.SHAEmployee + line.SACCODeduction +
+                                    line.LoanDeduction + line.OtherDeductions;
+                                var netPay = line.GrossSalary - totalDed;
+                                <tr>
+                                    <td>@(i + 1)</td>
+                                    <td>
+                                        <strong>@line.StaffPayroll.FullName</strong>
+                                        <small class="text-muted d-block">
+                                            @line.StaffPayroll.StaffNumber
+                                        </small>
+                                    </td>
+                                    <td class="text-end">
+                                        @line.BasicSalary.ToString("N0")
+                                    </td>
+                                    <td class="text-end">
+                                        @((line.HouseAllowance +
+                                            line.TransportAllowance +
+                                            line.MedicalAllowance +
+                                            line.OtherAllowances).ToString("N0"))
+                                    </td>
+                                    <td class="text-end fw-bold">
+                                        @line.GrossSalary.ToString("N0")
+                                    </td>
+                                    <td class="text-end text-danger">
+                                        @line.PAYE.ToString("N0")
+                                    </td>
+                                    <td class="text-end text-danger">
+                                        @line.NSSFEmployee.ToString("N0")
+                                    </td>
+                                    <td class="text-end text-danger">
+                                        @line.SHAEmployee.ToString("N0")
+                                    </td>
+                                    <td class="text-end text-danger">
+                                        @((line.SACCODeduction +
+                                            line.LoanDeduction +
+                                            line.OtherDeductions).ToString("N0"))
+                                    </td>
+                                    <td class="text-end fw-bold text-danger">
+                                        @totalDed.ToString("N0")
+                                    </td>
+                                    <td class="text-end fw-bold text-success">
+    @netPay.ToString("N0")
+</td>
+<td class="d-print-none">
+    <div class="d-flex gap-1">
+        <a href="/Payroll/DownloadPayslip?lineId=@line.Id"
+           class="btn btn-sm btn-outline-primary" title="Download Payslip"
+           target="_blank">
+            <i class="fas fa-download"></i>
+        </a>
+        <form asp-action="EmailPayslip" asp-controller="Payroll"
+              method="post" class="d-inline">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="lineId" value="@line.Id" />
+            <button type="submit" class="btn btn-sm btn-outline-success"
+                    title="Email Payslip">
+                <i class="fas fa-envelope"></i>
+            </button>
+        </form>
+    </div>
+</td>
+</tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="2" class="fw-bold text-end">
+                                    TOTALS:
+                                </td>
+                                <td class="text-end fw-bold">
+                                    @Model.Lines.Sum(l => l.BasicSalary).ToString("N0")
+                                </td>
+                                <td class="text-end fw-bold">
+                                    @Model.Lines.Sum(l =>
+                                        l.HouseAllowance + l.TransportAllowance +
+                                        l.MedicalAllowance + l.OtherAllowances).ToString("N0")
+                                </td>
+                                <td class="text-end fw-bold">
+                                    @Model.TotalGross.ToString("N0")
+                                </td>
+                                <td class="text-end fw-bold text-danger">
+                                    @Model.TotalPAYE.ToString("N0")
+                                </td>
+                                <td class="text-end fw-bold text-danger">
+                                    @Model.TotalNSSF.ToString("N0")
+                                </td>
+                                <td class="text-end fw-bold text-danger">
+                                    @Model.TotalSHA.ToString("N0")
+                                </td>
+                                <td class="text-end fw-bold text-danger">
+                                    @Model.Lines.Sum(l =>
+                                        l.SACCODeduction + l.LoanDeduction +
+                                        l.OtherDeductions).ToString("N0")
+                                </td>
+                                <td class="text-end fw-bold text-danger">
+                                    @Model.TotalDeductions.ToString("N0")
+                                </td>
+                                <td class="text-end fw-bold text-success">
+                                    @Model.TotalNetPay.ToString("N0")
+                                </td>
+                                <td class="d-print-none"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="card-footer d-print-block text-muted small">
+                    @(school?.Name ?? "") |
+                    Generated: @DateTime.Now.ToString("dd MMM yyyy HH:mm") |
+                    @(Model.Status == PayrollRunStatus.Approved
+                        ? $"Approved by: {Model.ApprovedBy}" : "DRAFT — Not yet approved")
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="paySalariesModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-money-check-alt me-2"></i>Pay Salaries</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="PaySalaries" asp-controller="Payroll" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="runId" value="@Model.Id" />
+                <div class="modal-body">
+                    <p>Pay <strong>KES @Model.TotalNetPay.ToString("N0")</strong> net salaries for <strong>@Model.MonthName</strong> from:</p>
+                    <select name="cashAccountId" class="form-control" required>
+                        <option value="">-- Select Account --</option>
+                        @foreach (var acc in (List<SMIS.Domain.Entities.Accounting.Account>)ViewBag.CashAccounts)
+                        {
+                            <option value="@acc.Id">@acc.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check me-1"></i>Confirm Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

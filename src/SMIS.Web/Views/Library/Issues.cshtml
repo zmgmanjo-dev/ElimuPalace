@@ -1,0 +1,393 @@
+@model List<SMIS.Domain.Entities.Library.BookIssue>
+@using SMIS.Domain.Entities.Library
+@{
+    ViewData["Title"] = "Book Issues";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-hand-holding-heart me-2 text-primary"></i>
+                    Book Issues & Returns
+                </span>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-primary btn-sm me-2"
+                        data-bs-toggle="modal"
+                        data-bs-target="#issueBookModal">
+                    <i class="fas fa-plus me-1"></i> Issue Book
+                </button>
+                <a href="/Library" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show mb-4">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @* Filter Tabs *@
+            <div class="mb-3">
+                <a href="/Library/Issues"
+                   class="btn btn-sm @(ViewBag.Status == null ? "btn-primary" : "btn-outline-primary") me-1">
+                    All
+                </a>
+                <a href="/Library/Issues?status=issued"
+                   class="btn btn-sm @(ViewBag.Status == "issued" ? "btn-primary" : "btn-outline-primary") me-1">
+                    Issued
+                </a>
+                <a href="/Library/Issues?status=overdue"
+                   class="btn btn-sm @(ViewBag.Status == "overdue" ? "btn-danger" : "btn-outline-danger") me-1">
+                    Overdue
+                </a>
+                <a href="/Library/Issues?status=returned"
+                   class="btn btn-sm @(ViewBag.Status == "returned" ? "btn-success" : "btn-outline-success")">
+                    Returned
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-list me-2 text-primary"></i>
+                    <strong>Book Issues</strong>
+                    <span class="badge bg-primary ms-2">@Model.Count</span>
+                </div>
+                @if (!Model.Any())
+                {
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-book fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Records Found</h5>
+                        <p class="text-muted">
+                            Click <strong>"Issue Book"</strong> to issue
+                            a book to a student or staff.
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Book</th>
+                                    <th>Borrower</th>
+                                    <th>Type</th>
+                                    <th>Issue Date</th>
+                                    <th>Due Date</th>
+                                    <th>Return Date</th>
+                                    <th>Fine</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var issue in Model)
+                                {
+                                    <tr class="@(issue.Status == BookIssueStatus.Overdue ? "table-danger" : "")">
+                                        <td>
+                                            <strong>@issue.Book.Title</strong>
+                                        </td>
+                                        <td>
+    @if (issue.BorrowerType == BorrowerType.Student && issue.Student != null)
+    {
+        @issue.Student.FullName
+        <small class="text-muted d-block">@issue.Student.AdmissionNumber</small>
+    }
+    else if (issue.BorrowerType == BorrowerType.Staff)
+    {
+        @(issue.StaffPayroll?.FullName ?? issue.StaffName ?? "-")
+        <small class="text-muted d-block">
+            @(issue.StaffPayroll?.StaffNumber ?? issue.StaffId ?? "-")
+        </small>
+    }
+    else if (issue.BorrowerType == BorrowerType.Visitor)
+    {
+        @issue.VisitorName
+        <small class="text-muted d-block">
+            @(issue.VisitorPosition ?? "-") @(!string.IsNullOrEmpty(issue.VisitorIdNumber) ? $"— {issue.VisitorIdNumber}" : "")
+        </small>
+    }
+</td>
+<td>
+    @if (issue.BorrowerType == BorrowerType.Student)
+    {
+        <span class="badge bg-info text-dark">Student</span>
+    }
+    else if (issue.BorrowerType == BorrowerType.Staff)
+    {
+        <span class="badge bg-warning text-dark">Staff</span>
+    }
+    else
+    {
+        <span class="badge bg-secondary">Visitor</span>
+    }
+</td>
+                                        <td>
+                                            @issue.IssueDate.ToString("dd MMM yyyy")
+                                        </td>
+                                        <td>
+                                            @if (issue.Status == BookIssueStatus.Overdue)
+                                            {
+                                                <span class="text-danger fw-bold">
+                                                    @issue.DueDate.ToString("dd MMM yyyy")
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                @issue.DueDate.ToString("dd MMM yyyy")
+                                            }
+                                        </td>
+                                        <td>
+                                            @(issue.ReturnDate?.ToString("dd MMM yyyy") ?? "-")
+                                        </td>
+                                        <td>
+                                            @if (issue.FineAmount > 0)
+                                            {
+                                                <span class="text-danger fw-bold">
+                                                    KES @issue.FineAmount?.ToString("N0")
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @switch (issue.Status)
+                                            {
+                                                case BookIssueStatus.Issued:
+                                                    <span class="badge bg-primary">Issued</span>
+                                                    break;
+                                                case BookIssueStatus.Returned:
+                                                    <span class="badge bg-success">Returned</span>
+                                                    break;
+                                                case BookIssueStatus.Overdue:
+                                                    <span class="badge bg-danger">Overdue</span>
+                                                    break;
+                                                case BookIssueStatus.Lost:
+                                                    <span class="badge bg-secondary">Lost</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (issue.Status != BookIssueStatus.Returned)
+                                            {
+                                                <button class="btn btn-sm btn-success"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#returnModal"
+                                                        data-issue-id="@issue.Id"
+                                                        data-book-title="@issue.Book.Title">
+                                                    <i class="fas fa-undo me-1"></i>Return
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">Returned</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ISSUE BOOK MODAL *@
+<div class="modal fade" id="issueBookModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-book me-2"></i>Issue Book
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="IssueBook" asp-controller="Library" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            Book <span class="text-danger">*</span>
+                        </label>
+                        <select name="bookId" class="form-control" required>
+                            <option value="">-- Select Book --</option>
+                            @foreach (var book in ViewBag.Books)
+                            {
+                                <option value="@book.Id">
+                                    @book.Title
+                                    (@book.AvailableCopies available)
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+    <label class="form-label fw-bold">Borrower Type</label>
+    <select name="borrowerType" class="form-control"
+            id="borrowerTypeSelect"
+            onchange="toggleBorrower()">
+        <option value="1">Student</option>
+        <option value="2">Staff</option>
+        <option value="3">Visitor</option>
+    </select>
+</div>
+
+<div id="studentSection" class="mb-3">
+    <label class="form-label fw-bold">Student</label>
+    <select name="studentId" class="form-control">
+        <option value="">-- Select Student --</option>
+        @foreach (var student in ViewBag.Students)
+        {
+            <option value="@student.Id">
+                @student.AdmissionNumber — @student.FullName
+            </option>
+        }
+    </select>
+</div>
+
+<div id="staffSection" class="mb-3" style="display:none;">
+    <label class="form-label fw-bold">Staff Member</label>
+    <select name="staffPayrollId" class="form-control">
+        <option value="">-- Select Staff --</option>
+        @foreach (var staff in ViewBag.StaffList)
+        {
+            <option value="@staff.Id">
+                @staff.StaffNumber — @staff.FullName
+            </option>
+        }
+    </select>
+</div>
+
+<div id="visitorSection" class="mb-3" style="display:none;">
+    <div class="row g-2">
+        <div class="col-md-5">
+            <label class="form-label fw-bold">Visitor Name</label>
+            <input type="text" name="visitorName" class="form-control"
+                   placeholder="Full name" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Position</label>
+            <input type="text" name="visitorPosition" class="form-control"
+                   placeholder="e.g. Parent, Contractor, Guest Speaker" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-bold">ID Number</label>
+            <input type="text" name="visitorIdNumber" class="form-control"
+                   placeholder="National ID" />
+        </div>
+    </div>
+</div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            Due Date <span class="text-danger">*</span>
+                        </label>
+                        <input type="date" name="dueDate" class="form-control"
+                               value="@DateTime.Today.AddDays(14).ToString("yyyy-MM-dd")"
+                               required />
+                        <small class="text-muted">Default: 2 weeks</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-book me-1"></i>Issue Book
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* RETURN BOOK MODAL *@
+<div class="modal fade" id="returnModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-undo me-2"></i>Return Book
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="ReturnBook" asp-controller="Library" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="returnIssueId" />
+                <div class="modal-body">
+                    <p>Returning: <strong id="returnBookTitle"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Notes</label>
+                        <textarea name="notes" class="form-control" rows="2"
+                                  placeholder="e.g. Book returned in good condition"></textarea>
+                    </div>
+                    <div class="alert alert-info small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        A fine of KES 5 per day will be calculated
+                        if the book is overdue.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-undo me-1"></i>Confirm Return
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function toggleBorrower() {
+    const type = document.getElementById('borrowerTypeSelect').value;
+    document.getElementById('studentSection').style.display = type == 1 ? '' : 'none';
+    document.getElementById('staffSection').style.display = type == 2 ? '' : 'none';
+    document.getElementById('visitorSection').style.display = type == 3 ? '' : 'none';
+}
+
+    document.querySelectorAll('[data-bs-target="#returnModal"]')
+        .forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.getElementById('returnIssueId').value =
+                    this.dataset.issueId;
+                document.getElementById('returnBookTitle').textContent =
+                    this.dataset.bookTitle;
+            });
+        });
+</script>
+}

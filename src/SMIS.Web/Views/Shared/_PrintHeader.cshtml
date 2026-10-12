@@ -1,0 +1,48 @@
+@{
+    var school = ViewBag.School as SMIS.Domain.Entities.School.SchoolProfile;
+    var reportTitle = ViewBag.ReportTitle as string ?? "Report";
+    var reportSubtitle = ViewBag.ReportSubtitle as string ?? "";
+}
+
+<div class="d-none d-print-block mb-4">
+    <div class="text-center border-bottom pb-3 mb-3">
+        @if (school?.LogoPath != null)
+        {
+            <img src="@school.LogoPath"
+                 style="height:70px;width:70px;border-radius:50%;
+                        object-fit:cover;" class="mb-2" />
+        }
+        else
+        {
+            <div style="width:70px;height:70px;border-radius:50%;
+                        background:#1a56db;display:inline-flex;
+                        align-items:center;justify-content:center;
+                        margin-bottom:8px;">
+                <i class="fas fa-graduation-cap fa-2x"
+                   style="color:white;"></i>
+            </div>
+        }
+        <h3 class="fw-bold text-primary mb-0">
+            @(school?.Name ?? "School Name")
+        </h3>
+        <p class="text-muted mb-0 small">
+            @(school?.Motto ?? "")
+        </p>
+        <p class="text-muted mb-0 small">
+            @(school?.PhysicalAddress ?? "")
+            @(school?.PhoneNumber != null ? $" | Tel: {school.PhoneNumber}" : "")
+            @(school?.Email != null ? $" | Email: {school.Email}" : "")
+        </p>
+        <div class="mt-2">
+            <h5 class="fw-bold mb-0">@reportTitle</h5>
+            @if (!string.IsNullOrEmpty(reportSubtitle))
+            {
+                <p class="text-muted mb-0 small">@reportSubtitle</p>
+            }
+        </div>
+        <p class="text-muted small mb-0 mt-1">
+            Generated: @DateTime.Now.ToString("dd MMM yyyy HH:mm")
+            &nbsp;|&nbsp; By: @User.Identity?.Name
+        </p>
+    </div>
+</div>

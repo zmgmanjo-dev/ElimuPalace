@@ -1,0 +1,317 @@
+@model List<SMIS.Domain.Entities.Finance.FeeCategory>
+@{
+    ViewData["Title"] = "Fee Categories";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-tags me-2 text-primary"></i>Fee Categories
+                </span>
+            </div>
+            <div class="header-right">
+                @if (!Model.Any())
+                {
+                    <form asp-action="SeedDefaultCategories"
+                          asp-controller="Finance" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-success btn-sm me-2">
+                            <i class="fas fa-magic me-1"></i> Load Default Categories
+                        </button>
+                    </form>
+                }
+                <button class="btn btn-primary btn-sm"
+                        data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                    <i class="fas fa-plus me-1"></i> Add Category
+                </button>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show mb-4">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (!Model.Any())
+            {
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-tags fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Fee Categories Yet</h5>
+                        <p class="text-muted">
+                            Click <strong>"Load Default Categories"</strong> to create
+                            standard fee categories, or add your own.
+                        </p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-tags me-2 text-primary"></i>
+                        <strong>Fee Categories</strong>
+                        <span class="badge bg-primary ms-2">@Model.Count</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Category Name</th>
+                                    <th>Description</th>
+                                    <th>Type</th>
+                                    <th>Posts To</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var cat in Model)
+                                {
+                                    <tr class="@(cat.IsActive ? "" : "table-secondary text-muted")">
+                                        <td>@cat.OrderIndex</td>
+                                        <td>
+                                            <i class="fas fa-tag text-primary me-2"></i>
+                                            <strong>@cat.Name</strong>
+                                        </td>
+                                        <td class="text-muted">
+                                            @(cat.Description ?? "-")
+                                        </td>
+                                        <td>
+                                            @if (cat.IsRecurring)
+                                            {
+                                                <span class="badge bg-info text-dark">Per Term</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning text-dark">One Time</span>
+                                            }
+                                        </td>
+                                        <td class="small">
+                                            @if (cat.IncomeAccount != null)
+                                            {
+                                                <span>@cat.IncomeAccount.Code — @cat.IncomeAccount.Name</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Default (4100 — School Fees Income)</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (cat.IsActive)
+                                            {
+                                                <span class="badge bg-success">Active</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Inactive</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-1">
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-primary edit-cat-btn"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#editCategoryModal"
+                                                        data-id="@cat.Id"
+                                                        data-name="@cat.Name"
+                                                        data-description="@cat.Description"
+                                                        data-recurring="@(cat.IsRecurring ? "1" : "0")"
+                                                        data-order="@cat.OrderIndex"
+                                                        data-account="@cat.IncomeAccountId"
+                                                        title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <form asp-action="ToggleFeeCategory" asp-controller="Finance"
+                                                      method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@cat.Id" />
+                                                    <button type="submit"
+                                                            class="btn btn-sm @(cat.IsActive ? "btn-outline-warning" : "btn-outline-success")"
+                                                            title="@(cat.IsActive ? "Deactivate" : "Activate")">
+                                                        <i class="fas @(cat.IsActive ? "fa-eye-slash" : "fa-eye")"></i>
+                                                    </button>
+                                                </form>
+                                                <form asp-action="DeleteFeeCategory" asp-controller="Finance"
+                                                      method="post" class="d-inline"
+                                                      onsubmit="return confirm('Delete this category permanently? This only works if it has never been used.')">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@cat.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                            title="Delete">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@* ADD CATEGORY MODAL *@
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>Add Fee Category
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="CreateFeeCategory" asp-controller="Finance" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Category Name <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="name" class="form-control"
+                               placeholder="e.g. Tuition Fee" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="2"
+                                  placeholder="Optional description"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Posts To Account</label>
+                        <select name="incomeAccountId" class="form-control">
+                            <option value="">Default — 4100 School Fees Income</option>
+                            @foreach (var acc in (List<SMIS.Domain.Entities.Accounting.Account>)ViewBag.LinkableAccounts)
+                            {
+                                <option value="@acc.Id">@acc.Code — @acc.Name</option>
+                            }
+                        </select>
+                        <small class="text-muted">
+                            Choose an Income account for fees the school earns, or a
+                            Liability account (e.g. Fee Deposits) for refundable amounts.
+                        </small>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="isRecurring" value="true"
+                               class="form-check-input" id="isRecurringCheck" checked />
+                        <label class="form-check-label" for="isRecurringCheck">
+                            Recurring (charged every term)
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Create Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* EDIT CATEGORY MODAL *@
+<div class="modal fade" id="editCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>Edit Fee Category
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="EditFeeCategory" asp-controller="Finance" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="editCatId" />
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Category Name <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="name" id="editCatName"
+                               class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" id="editCatDescription"
+                                  class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Posts To Account</label>
+                        <select name="incomeAccountId" id="editCatAccount" class="form-control">
+                            <option value="">Default — 4100 School Fees Income</option>
+                            @foreach (var acc in (List<SMIS.Domain.Entities.Accounting.Account>)ViewBag.LinkableAccounts)
+                            {
+                                <option value="@acc.Id">@acc.Code — @acc.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Display Order</label>
+                        <input type="number" name="orderIndex" id="editCatOrder"
+                               class="form-control" min="0" />
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="isRecurring" value="true"
+                               class="form-check-input" id="editCatRecurring" />
+                        <label class="form-check-label" for="editCatRecurring">
+                            Recurring (charged every term)
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.querySelectorAll('.edit-cat-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.getElementById('editCatId').value = this.dataset.id;
+            document.getElementById('editCatName').value = this.dataset.name;
+            document.getElementById('editCatDescription').value = this.dataset.description || '';
+            document.getElementById('editCatOrder').value = this.dataset.order;
+            document.getElementById('editCatRecurring').checked = this.dataset.recurring === '1';
+            document.getElementById('editCatAccount').value = this.dataset.account || '';
+        });
+    });
+</script>
+}

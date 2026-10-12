@@ -1,0 +1,488 @@
+@model List<SMIS.Domain.Entities.Accounting.Account>
+@using SMIS.Domain.Entities.Accounting
+@{
+    ViewData["Title"] = "Chart of Accounts";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-sitemap me-2 text-primary"></i>
+                    Chart of Accounts
+                </span>
+            </div>
+            <div class="header-right">
+                @if (!Model.Any())
+                {
+                    <form asp-action="SeedDefaultAccounts"
+                          asp-controller="Accounting" method="post"
+                          class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-success btn-sm me-2">
+                            <i class="fas fa-magic me-1"></i>
+                            Load Default Accounts
+                        </button>
+                    </form>
+                }
+                <button class="btn btn-primary btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#addAccountModal">
+                    <i class="fas fa-plus me-1"></i> Add Account
+                </button>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show mb-4">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (!Model.Any())
+            {
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-sitemap fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Accounts Yet</h5>
+                        <p class="text-muted">
+                            Click <strong>"Load Default Accounts"</strong>
+                            to create a standard school chart of accounts.
+                        </p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                @* Group by Account Type *@
+                var grouped = Model.GroupBy(a => a.AccountType)
+                    .OrderBy(g => g.Key).ToList();
+
+                @foreach (var group in grouped)
+                {
+                    var typeColor = group.Key switch
+                    {
+                        AccountType.Asset => "primary",
+                        AccountType.Liability => "danger",
+                        AccountType.Equity => "success",
+                        AccountType.Income => "info",
+                        AccountType.Expense => "warning",
+                        _ => "secondary"
+                    };
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <i class="fas fa-folder me-2 text-@typeColor"></i>
+                            <strong>@group.Key Accounts</strong>
+                            <span class="badge bg-@typeColor ms-2">
+                                @group.Count()
+                            </span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Account Name</th>
+                                        <th>Category</th>
+                                        <th>Normal Balance</th>
+                                        <th class="text-end">
+                                            Opening Balance
+                                        </th>
+                                        <th>Direct Entry</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var acc in
+                                        group.OrderBy(a => a.Code))
+                                    {
+                                        <tr class="@(!acc.IsActive ? "table-secondary text-muted" : (!acc.AllowDirectEntry ? "table-light" : ""))">
+                                            <td>
+                                                <span class="badge bg-light text-dark fw-bold">
+                                                    @acc.Code
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if (!acc.AllowDirectEntry)
+                                                {
+                                                    <strong>@acc.Name</strong>
+                                                }
+                                                else
+                                                {
+                                                    <span class="ms-3">@acc.Name</span>
+                                                }
+                                            </td>
+                                            <td class="text-muted small">
+                                                @acc.Category
+                                            </td>
+                                            <td>
+                                                @if (acc.NormalBalance ==
+                                                    BalanceSide.Debit)
+                                                {
+                                                    <span class="badge bg-primary">
+                                                        Dr
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-success">
+                                                        Cr
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td class="text-end">
+                                                @if (acc.OpeningBalance != 0)
+                                                {
+                                                    @acc.OpeningBalance.ToString("N0")
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">—</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (acc.AllowDirectEntry)
+                                                {
+                                                    <span class="badge bg-success">
+                                                        Yes
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">
+                                                        Header
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (acc.IsActive)
+                                                {
+                                                    <span class="badge bg-success">Active</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Inactive</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="d-flex gap-1">
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-primary edit-acc-btn"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#editAccountModal"
+                                                            data-id="@acc.Id"
+                                                            data-code="@acc.Code"
+                                                            data-name="@acc.Name"
+                                                            data-type="@((int)acc.AccountType)"
+                                                            data-category="@((int)acc.Category)"
+                                                            data-parent="@acc.ParentAccountId"
+                                                            data-opening="@acc.OpeningBalance.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
+                                                            data-direct="@(acc.AllowDirectEntry ? "1" : "0")"
+                                                            data-description="@acc.Description"
+                                                            title="Edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <form asp-action="ToggleAccount" asp-controller="Accounting"
+                                                          method="post" class="d-inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@acc.Id" />
+                                                        <button type="submit"
+                                                                class="btn btn-sm @(acc.IsActive ? "btn-outline-warning" : "btn-outline-success")"
+                                                                title="@(acc.IsActive ? "Deactivate" : "Activate")">
+                                                            <i class="fas @(acc.IsActive ? "fa-eye-slash" : "fa-eye")"></i>
+                                                        </button>
+                                                    </form>
+                                                    <form asp-action="DeleteAccount" asp-controller="Accounting"
+                                                          method="post" class="d-inline"
+                                                          onsubmit="return confirm('Delete this account permanently? This only works if it has never been used.')">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@acc.Id" />
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                                title="Delete">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@* ADD ACCOUNT MODAL *@
+<div class="modal fade" id="addAccountModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>Add Account
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="CreateAccount"
+                  asp-controller="Accounting" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">
+                                Account Code <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="code"
+                                   class="form-control"
+                                   placeholder="e.g. 5401" required />
+                        </div>
+                        <div class="col-md-9">
+                            <label class="form-label fw-bold">
+                                Account Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="name"
+                                   class="form-control"
+                                   placeholder="e.g. Cleaning Expenses"
+                                   required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Account Type <span class="text-danger">*</span>
+                            </label>
+                            <select name="accountType" class="form-control"
+                                    asp-items="Html.GetEnumSelectList<AccountType>()">
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Category</label>
+                            <select name="category" class="form-control"
+                                    asp-items="Html.GetEnumSelectList<AccountCategory>()">
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Parent Account
+                            </label>
+                            <select name="parentAccountId"
+                                    class="form-control">
+                                <option value="">None (Top Level)</option>
+                                @foreach (var acc in Model
+                                    .Where(a => !a.AllowDirectEntry)
+                                    .OrderBy(a => a.Code))
+                                {
+                                    <option value="@acc.Id">
+                                        @acc.Code - @acc.Name
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">
+                                Opening Balance
+                            </label>
+                            <input type="number" name="openingBalance"
+                                   class="form-control"
+                                   value="0" step="0.01" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">
+                                Allow Direct Entry
+                            </label>
+                            <div class="form-check mt-2">
+                                <input type="checkbox"
+                                       name="allowDirectEntry"
+                                       value="true"
+                                       class="form-check-input"
+                                       id="allowDirectEntryCheck"
+                                       checked />
+                                <label class="form-check-label"
+                                       for="allowDirectEntryCheck">
+                                    Yes
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">
+                                Description
+                            </label>
+                            <input type="text" name="description"
+                                   class="form-control"
+                                   placeholder="Optional description" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Create Account
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* EDIT ACCOUNT MODAL *@
+<div class="modal fade" id="editAccountModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>Edit Account
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="EditAccount"
+                  asp-controller="Accounting" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="editAccId" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">
+                                Account Code <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="code" id="editAccCode"
+                                   class="form-control" required />
+                        </div>
+                        <div class="col-md-9">
+                            <label class="form-label fw-bold">
+                                Account Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="name" id="editAccName"
+                                   class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Account Type <span class="text-danger">*</span>
+                            </label>
+                            <select name="accountType" id="editAccType" class="form-control"
+                                    asp-items="Html.GetEnumSelectList<AccountType>()">
+                            </select>
+                            <small class="text-muted">
+                                Can't be changed once the account has journal entries.
+                            </small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Category</label>
+                            <select name="category" id="editAccCategory" class="form-control"
+                                    asp-items="Html.GetEnumSelectList<AccountCategory>()">
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Parent Account
+                            </label>
+                            <select name="parentAccountId" id="editAccParent"
+                                    class="form-control">
+                                <option value="">None (Top Level)</option>
+                                @foreach (var acc in Model
+                                    .Where(a => !a.AllowDirectEntry)
+                                    .OrderBy(a => a.Code))
+                                {
+                                    <option value="@acc.Id" data-self-id="@acc.Id">
+                                        @acc.Code - @acc.Name
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">
+                                Opening Balance
+                            </label>
+                            <input type="number" name="openingBalance" id="editAccOpening"
+                                   class="form-control" step="0.01" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">
+                                Allow Direct Entry
+                            </label>
+                            <div class="form-check mt-2">
+                                <input type="checkbox"
+                                       name="allowDirectEntry"
+                                       value="true"
+                                       class="form-check-input"
+                                       id="editAccDirect" />
+                                <label class="form-check-label"
+                                       for="editAccDirect">
+                                    Yes
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">
+                                Description
+                            </label>
+                            <input type="text" name="description" id="editAccDescription"
+                                   class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.querySelectorAll('.edit-acc-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.getElementById('editAccId').value = this.dataset.id;
+            document.getElementById('editAccCode').value = this.dataset.code;
+            document.getElementById('editAccName').value = this.dataset.name;
+            document.getElementById('editAccType').value = this.dataset.type;
+            document.getElementById('editAccCategory').value = this.dataset.category;
+            document.getElementById('editAccParent').value = this.dataset.parent || '';
+            document.getElementById('editAccOpening').value = this.dataset.opening;
+            document.getElementById('editAccDirect').checked = this.dataset.direct === '1';
+            document.getElementById('editAccDescription').value = this.dataset.description || '';
+
+            // An account can't be set as its own parent
+            const parentSelect = document.getElementById('editAccParent');
+            Array.from(parentSelect.options).forEach(opt => {
+                opt.disabled = opt.value === this.dataset.id;
+            });
+        });
+    });
+</script>
+}

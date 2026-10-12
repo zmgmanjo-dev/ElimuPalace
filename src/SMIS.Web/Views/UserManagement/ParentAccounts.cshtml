@@ -1,0 +1,211 @@
+@model List<IdentityUser>
+@using Microsoft.AspNetCore.Identity
+@{
+    ViewData["Title"] = "Parent Accounts";
+    var linksByParent = ViewBag.LinksByParent as Dictionary<string, List<SMIS.Domain.Entities.Students.ParentStudentLink>>;
+    var fullNames = ViewBag.FullNames as Dictionary<string, string>;
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-users me-2 text-primary"></i>
+                    Parent Accounts
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/UserManagement/CreateParentAccount" class="btn btn-primary btn-sm me-2">
+                    <i class="fas fa-plus me-1"></i> Create Parent Account
+                </a>
+                <a href="/UserManagement" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Users
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show mb-4">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="card mb-4">
+                <div class="card-body p-3">
+                    <form method="get" class="row g-2">
+                        <div class="col-md-6">
+                            <input type="text" name="search" class="form-control"
+                                   placeholder="Search by email..." value="@ViewBag.Search" />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-1"></i> Search
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-list me-2 text-primary"></i>
+                    <strong>Parent Accounts</strong>
+                    <span class="badge bg-primary ms-2">@Model.Count</span>
+                </div>
+                @if (!Model.Any())
+                {
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Parent Accounts Yet</h5>
+                        <a href="/UserManagement/CreateParentAccount" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i> Create First Parent Account
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Linked Children</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var user in Model)
+                                {
+                                    var links = linksByParent != null && linksByParent.ContainsKey(user.Id)
+                                        ? linksByParent[user.Id] : new List<SMIS.Domain.Entities.Students.ParentStudentLink>();
+                                    <tr>
+                                        <td><strong>@fullNames![user.Id]</strong></td>
+                                        <td>@user.Email</td>
+                                        <td>@(user.PhoneNumber ?? "-")</td>
+                                        <td>
+                                            @if (!links.Any())
+                                            {
+                                                <span class="text-muted small">No children linked</span>
+                                            }
+                                            else
+                                            {
+                                                @foreach (var link in links)
+                                                {
+                                                    <span class="badge bg-light text-dark border me-1 mb-1">
+                                                        @link.Student.FullName
+                                                        (@(link.Student.ClassLevel?.Name ?? "-"))
+                                                        — @link.Relationship
+                                                        <form asp-action="UnlinkStudent" method="post" class="d-inline">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="linkId" value="@link.Id" />
+                                                            <button type="submit" class="btn btn-sm p-0 ms-1 text-danger border-0"
+                                                                    style="background:none;"
+                                                                    onclick="return confirm('Unlink this student?')"
+                                                                    title="Unlink">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                        </form>
+                                                    </span>
+                                                }
+                                            }
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#linkModal"
+                                                    data-parent-id="@user.Id"
+                                                    data-parent-name="@fullNames[user.Id]">
+                                                <i class="fas fa-link me-1"></i>Add Child
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ADD CHILD MODAL *@
+<div class="modal fade" id="linkModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-link me-2"></i>Link Student to <span id="modalParentName"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="LinkStudentToParent" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="parentUserId" id="modalParentId" />
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Student</label>
+                        <select name="studentId" class="form-control" required>
+                            <option value="">-- Select Student --</option>
+                            @foreach (var s in ViewBag.AllStudents)
+                            {
+                                <option value="@s.Id">
+                                    @s.AdmissionNumber — @s.FullName (@(s.ClassLevel?.Name ?? "-"))
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Relationship</label>
+                        <select name="relationship" class="form-control">
+                            <option value="Father">Father</option>
+                            <option value="Mother">Mother</option>
+                            <option value="Guardian">Guardian</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-link me-1"></i>Link Student
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.querySelectorAll('[data-bs-target="#linkModal"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.getElementById('modalParentId').value = this.dataset.parentId;
+            document.getElementById('modalParentName').textContent = this.dataset.parentName;
+        });
+    });
+</script>
+}

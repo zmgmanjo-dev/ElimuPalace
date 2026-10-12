@@ -1,0 +1,297 @@
+@model List<SMIS.Domain.Entities.Finance.StudentInvoice>
+@{
+    ViewData["Title"] = "Invoices";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-file-invoice-dollar me-2 text-primary"></i>
+                    Student Invoices
+                </span>
+            </div>
+            <div class="header-right">
+    <button class="btn btn-primary btn-sm"
+            data-bs-toggle="modal" data-bs-target="#generateInvoiceModal">
+        <i class="fas fa-plus me-1"></i> Generate Invoice
+    </button>
+    <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show mb-4">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @* Summary Cards *@
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@Model.Count</div>
+                            <div class="stat-label">Total Invoices</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.TotalInvoiced).ToString("N0"))
+                            </div>
+                            <div class="stat-label">Total Invoiced</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.TotalPaid).ToString("N0"))
+                            </div>
+                            <div class="stat-label">Total Paid</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.TotalBalance).ToString("N0"))
+                            </div>
+                            <div class="stat-label">Outstanding</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Filter by Term *@
+            <div class="card mb-4">
+                <div class="card-body p-3">
+                    <form method="get" action="/Finance/Invoices"
+                          class="row g-2 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Filter by Term</label>
+                            <select name="termId" class="form-control"
+                                    onchange="this.form.submit()">
+                                <option value="">All Terms</option>
+                                @foreach (var term in ViewBag.Terms)
+                                {
+                                    <option value="@term.Id"
+                                            selected="@(ViewBag.CurrentTermId == term.Id ? "selected" : null)">
+                                        @term.AcademicYear.Name - @term.Name
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            @* Invoices Table *@
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-list me-2 text-primary"></i>
+                    <strong>Invoice List</strong>
+                    <span class="badge bg-primary ms-2">@Model.Count</span>
+                </div>
+                @if (!Model.Any())
+                {
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-file-invoice-dollar fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Invoices Yet</h5>
+                        <p class="text-muted">
+                            Click <strong>"Generate Invoice"</strong> to create
+                            a fee invoice for a student.
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Invoice No.</th>
+                                    <th>Student</th>
+                                    <th>Class</th>
+                                    <th>Term</th>
+                                    <th class="text-end">Amount</th>
+                                    <th class="text-end">Paid</th>
+                                    <th class="text-end">Balance</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var invoice in Model)
+                                {
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-light text-dark fw-bold">
+                                                @invoice.InvoiceNumber
+                                            </span>
+                                        </td>
+                                        <td><strong>@invoice.Student.FullName</strong></td>
+                                        <td>@(invoice.Student.ClassLevel?.Name ?? "-")</td>
+                                        <td>
+                                            @invoice.AcademicYear.Name
+                                            — @invoice.AcademicTerm.Name
+                                        </td>
+                                        <td class="text-end">
+                                            KES @invoice.TotalAmount.ToString("N0")
+                                        </td>
+                                        <td class="text-end text-success">
+                                            KES @invoice.TotalPaid.ToString("N0")
+                                        </td>
+                                        <td class="text-end text-danger fw-bold">
+                                            KES @invoice.Balance.ToString("N0")
+                                        </td>
+                                        <td>
+                                            @switch (invoice.Status)
+                                            {
+                                                case SMIS.Domain.Entities.Finance.InvoiceStatus.Paid:
+                                                    <span class="badge bg-success">Paid</span>
+                                                    break;
+                                                case SMIS.Domain.Entities.Finance.InvoiceStatus.PartiallyPaid:
+                                                    <span class="badge bg-warning text-dark">Partial</span>
+                                                    break;
+                                                case SMIS.Domain.Entities.Finance.InvoiceStatus.Unpaid:
+                                                    <span class="badge bg-danger">Unpaid</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge bg-secondary">@invoice.Status</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td>
+                                            <a href="/Finance/InvoiceDetails/@invoice.Id"
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@* GENERATE INVOICE MODAL *@
+<div class="modal fade" id="generateInvoiceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-invoice me-2"></i>Generate Student Invoice
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="GenerateInvoice" asp-controller="Finance" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="alert alert-info py-2 small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Invoice amounts are automatically calculated from the
+                        fee structures set for the student's class.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Student <span class="text-danger">*</span>
+                        </label>
+                        <select name="studentId" class="form-control" required>
+                            <option value="">-- Select Student --</option>
+                            @if (ViewBag.Students != null)
+                            {
+                                foreach (var student in ViewBag.Students)
+                                {
+                                    <option value="@student.Id">
+                                        @student.AdmissionNumber — @student.FullName
+                                        (@(student.ClassLevel?.Name ?? "No Class"))
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Term <span class="text-danger">*</span>
+                        </label>
+                        <select name="academicTermId" class="form-control"
+                                id="termSelect" onchange="updateYear()" required>
+                            <option value="">-- Select Term --</option>
+                            @foreach (var term in ViewBag.Terms)
+                            {
+                                <option value="@term.Id"
+                                        data-year="@term.AcademicYearId"
+                                        selected="@(ViewBag.CurrentTermId == term.Id ? "selected" : null)">
+                                    @term.AcademicYear.Name - @term.Name
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <input type="hidden" name="academicYearId" id="yearId" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-file-invoice me-1"></i>Generate Invoice
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function updateYear() {
+        const termSelect = document.getElementById('termSelect');
+        const selected = termSelect.options[termSelect.selectedIndex];
+        document.getElementById('yearId').value = selected.dataset.year || '';
+    }
+    updateYear();
+</script>
+}

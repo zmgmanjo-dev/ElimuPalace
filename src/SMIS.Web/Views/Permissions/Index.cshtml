@@ -1,0 +1,228 @@
+@using SMIS.Domain.Entities.Security
+@{
+    ViewData["Title"] = "Role Permissions";
+    var roles = ViewBag.Roles as
+        List<Microsoft.AspNetCore.Identity.IdentityRole>
+        ?? new List<Microsoft.AspNetCore.Identity.IdentityRole>();
+    var modules = ViewBag.Modules as List<string>
+        ?? new List<string>();
+    var permissions = ViewBag.Permissions as List<RolePermission>
+        ?? new List<RolePermission>();
+    var selectedRole = Context.Request.Query["selectedRole"]
+        .ToString();
+    if (string.IsNullOrEmpty(selectedRole) && roles.Any())
+        selectedRole = roles.First().Name ?? "";
+    var rolePerms = permissions
+        .Where(p => p.RoleName == selectedRole).ToList();
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-lock me-2 text-primary"></i>
+                    Role Permissions
+                </span>
+            </div>
+            <div class="header-right">
+                @if (!permissions.Any())
+                {
+                    <form asp-action="SeedDefaultPermissions"
+                          asp-controller="Permissions"
+                          method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit"
+                                class="btn btn-success btn-sm me-2">
+                            <i class="fas fa-magic me-1"></i>
+                            Load Default Permissions
+                        </button>
+                    </form>
+                }
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show mb-4">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="row g-4">
+                @* Role Selector *@
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-shield-alt me-2 text-primary"></i>
+                            <strong>Select Role</strong>
+                        </div>
+                        <div class="card-body p-0">
+                            @foreach (var role in roles)
+                            {
+                                <a href="/Permissions?selectedRole=@role.Name"
+                                   class="d-block p-3 border-bottom text-decoration-none
+                                          @(selectedRole == role.Name ? "bg-primary text-white" : "")">
+                                    <i class="fas fa-shield-alt me-2"></i>
+                                    @role.Name
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                @* Permissions Grid *@
+                <div class="col-md-9">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between">
+                            <span>
+                                <i class="fas fa-lock me-2 text-primary"></i>
+                                <strong>Permissions for: @selectedRole</strong>
+                            </span>
+                        </div>
+                        <div class="card-body p-0">
+                            <form asp-action="SavePermissions"
+                                  asp-controller="Permissions" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="roleName"
+                                       value="@selectedRole" />
+
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Module</th>
+                                                <th class="text-center">View</th>
+                                                <th class="text-center">Create</th>
+                                                <th class="text-center">Edit</th>
+                                                <th class="text-center">Delete</th>
+                                                <th class="text-center">Print</th>
+                                                <th class="text-center">Export</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var module in modules)
+                                            {
+                                                var perm = rolePerms
+                                                    .FirstOrDefault(p =>
+                                                        p.Module == module);
+                                                <tr>
+                                                    <td>
+                                                        <input type="hidden"
+                                                               name="modules"
+                                                               value="@module" />
+                                                        <i class="fas fa-cube text-primary me-2"></i>
+                                                        <strong>@module</strong>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <input type="checkbox"
+                                                               name="canView"
+                                                               value="true"
+                                                               class="form-check-input"
+                                                               @(perm?.CanView == true ? "checked" : "") />
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <input type="checkbox"
+                                                               name="canCreate"
+                                                               value="true"
+                                                               class="form-check-input"
+                                                               @(perm?.CanCreate == true ? "checked" : "") />
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <input type="checkbox"
+                                                               name="canEdit"
+                                                               value="true"
+                                                               class="form-check-input"
+                                                               @(perm?.CanEdit == true ? "checked" : "") />
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <input type="checkbox"
+                                                               name="canDelete"
+                                                               value="true"
+                                                               class="form-check-input"
+                                                               @(perm?.CanDelete == true ? "checked" : "") />
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <input type="checkbox"
+                                                               name="canPrint"
+                                                               value="true"
+                                                               class="form-check-input"
+                                                               @(perm?.CanPrint == true ? "checked" : "") />
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <input type="checkbox"
+                                                               name="canExport"
+                                                               value="true"
+                                                               class="form-check-input"
+                                                               @(perm?.CanExport == true ? "checked" : "") />
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="p-3 border-top d-flex gap-2">
+                                    <button type="submit"
+                                            class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>
+                                        Save Permissions
+                                    </button>
+                                    <button type="button"
+                                            class="btn btn-outline-success"
+                                            onclick="checkAll()">
+                                        <i class="fas fa-check-double me-1"></i>
+                                        Check All
+                                    </button>
+                                    <button type="button"
+                                            class="btn btn-outline-danger"
+                                            onclick="uncheckAll()">
+                                        <i class="fas fa-times me-1"></i>
+                                        Uncheck All
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function checkAll() {
+        document.querySelectorAll('input[type="checkbox"]')
+            .forEach(cb => cb.checked = true);
+    }
+    function uncheckAll() {
+        document.querySelectorAll('input[type="checkbox"]')
+            .forEach(cb => cb.checked = false);
+    }
+</script>
+}

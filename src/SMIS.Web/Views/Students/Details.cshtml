@@ -1,0 +1,291 @@
+@model SMIS.Domain.Entities.Students.Student
+@using SMIS.Domain.Enums
+@{
+    ViewData["Title"] = "Student Profile";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-user me-2 text-primary"></i>Student Profile
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Students/Edit/@Model.Id"
+                   class="btn btn-primary btn-sm me-2">
+                    <i class="fas fa-edit me-1"></i> Edit
+                </a>
+                <a href="/Students" class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <a href="/Students/Feedback/@Model.Id" class="btn btn-outline-primary btn-sm">
+    <i class="fas fa-comments me-1"></i> Feedback
+</a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+
+            @* PROFILE HEADER *@
+            <div class="card mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-4">
+                        @* Photo *@
+                        <div>
+                            @if (Model.PhotoPath != null)
+                            {
+                                <img src="@Model.PhotoPath"
+                                     style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #1a56db;" />
+                            }
+                            else
+                            {
+                                <div style="width:100px;height:100px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;border:3px solid #1a56db;">
+                                    <i class="fas fa-user fa-3x text-primary"></i>
+                                </div>
+                            }
+                        </div>
+                        @* Basic Info *@
+                        <div class="flex-grow-1">
+                            <h4 class="mb-1 fw-bold">@Model.FullName</h4>
+                            <div class="d-flex gap-3 flex-wrap">
+                                <span class="badge bg-primary fs-6">
+                                    @Model.AdmissionNumber
+                                </span>
+                                <span class="badge bg-success">
+                                    @Model.Status
+                                </span>
+                                @if (Model.Gender == Gender.Male)
+                                {
+                                    <span class="badge bg-info text-dark">
+                                        <i class="fas fa-male me-1"></i>Male
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge" style="background:#f9a8d4;color:#831843;">
+                                        <i class="fas fa-female me-1"></i>Female
+                                    </span>
+                                }
+                                @if (Model.ClassLevel != null)
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-layer-group me-1"></i>
+                                        @Model.ClassLevel.Name
+                                        @if (Model.ClassStream != null)
+                                        {
+                                            @($" - {Model.ClassStream.Name}")
+                                        }
+                                    </span>
+                                }
+                            </div>
+                            <div class="mt-2 text-muted small">
+                                <i class="fas fa-calendar me-1"></i>
+                                Admitted: @Model.AdmissionDate.ToString("dd MMM yyyy")
+                                &nbsp;|&nbsp;
+                                <i class="fas fa-birthday-cake me-1"></i>
+                                Age: @Model.Age years
+                                &nbsp;|&nbsp;
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                @Model.County @(Model.SubCounty != null ? $", {Model.SubCounty}" : "")
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                @* PERSONAL DETAILS *@
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <i class="fas fa-user me-2 text-primary"></i>Personal Details
+                        </div>
+                        <div class="card-body p-4">
+                            <table class="table table-sm mb-0">
+                                <tr>
+                                    <td class="text-muted fw-bold" style="width:45%">Full Name</td>
+                                    <td>@Model.FullName</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-bold">Date of Birth</td>
+                                    <td>@Model.DateOfBirth.ToString("dd MMM yyyy")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-bold">Gender</td>
+                                    <td>@Model.Gender</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-bold">Nationality</td>
+                                    <td>@(Model.Nationality ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-bold">Religion</td>
+                                    <td>@(Model.Religion ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-bold">Birth Cert No.</td>
+                                    <td>@(Model.BirthCertificateNumber ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-bold">Phone</td>
+                                    <td>@(Model.PhoneNumber ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-bold">County</td>
+                                    <td>@(Model.County ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-bold">Sub County</td>
+                                    <td>@(Model.SubCounty ?? "-")</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                @* PARENT INFO *@
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <i class="fas fa-users me-2 text-success"></i>Parent / Guardian
+                        </div>
+                        <div class="card-body p-4">
+                            <h6 class="text-primary mb-2">
+                                <i class="fas fa-male me-1"></i>Father
+                            </h6>
+                            <table class="table table-sm mb-3">
+                                <tr>
+                                    <td class="text-muted fw-bold" style="width:45%">Name</td>
+                                    <td>@(Model.FatherName == "" ? "-" : Model.FatherName)</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-bold">Phone</td>
+                                    <td>@(Model.FatherPhone ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-bold">Occupation</td>
+                                    <td>@(Model.FatherOccupation ?? "-")</td>
+                                </tr>
+                            </table>
+                            <h6 class="text-danger mb-2">
+                                <i class="fas fa-female me-1"></i>Mother
+                            </h6>
+                            <table class="table table-sm mb-3">
+                                <tr>
+                                    <td class="text-muted fw-bold" style="width:45%">Name</td>
+                                    <td>@(Model.MotherName == "" ? "-" : Model.MotherName)</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-bold">Phone</td>
+                                    <td>@(Model.MotherPhone ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-bold">Occupation</td>
+                                    <td>@(Model.MotherOccupation ?? "-")</td>
+                                </tr>
+                            </table>
+                            @if (Model.GuardianName != null)
+                            {
+                                <h6 class="text-warning mb-2">
+                                    <i class="fas fa-user-shield me-1"></i>Guardian
+                                </h6>
+                                <table class="table table-sm mb-0">
+                                    <tr>
+                                        <td class="text-muted fw-bold" style="width:45%">Name</td>
+                                        <td>@Model.GuardianName</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted fw-bold">Phone</td>
+                                        <td>@(Model.GuardianPhone ?? "-")</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted fw-bold">Relationship</td>
+                                        <td>@(Model.GuardianRelationship ?? "-")</td>
+                                    </tr>
+                                </table>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                @* MEDICAL *@
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-heartbeat me-2 text-danger"></i>Medical Information
+                        </div>
+                        <div class="card-body p-4">
+                            <table class="table table-sm mb-0">
+                                <tr>
+                                    <td class="text-muted fw-bold" style="width:45%">Blood Group</td>
+                                    <td>@(Model.BloodGroup ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-bold">Medical Conditions</td>
+                                    <td>@(Model.MedicalConditions ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-bold">Allergies</td>
+                                    <td>@(Model.Allergies ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-bold">Special Needs</td>
+                                    <td>
+                                        @if (Model.HasSpecialNeeds)
+                                        {
+                                            <span class="badge bg-warning text-dark">Yes</span>
+                                            <br />
+                                            <small>@Model.SpecialNeedsDescription</small>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">None</span>
+                                        }
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                @* PREVIOUS SCHOOL *@
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-school me-2 text-warning"></i>Previous School
+                        </div>
+                        <div class="card-body p-4">
+                            <table class="table table-sm mb-0">
+                                <tr>
+                                    <td class="text-muted fw-bold" style="width:45%">School Name</td>
+                                    <td>@(Model.PreviousSchool ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-bold">Previous Class</td>
+                                    <td>@(Model.PreviousClass ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted fw-bold">Reason for Leaving</td>
+                                    <td>@(Model.LeaveReason ?? "-")</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

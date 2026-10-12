@@ -1,0 +1,299 @@
+@model List<SMIS.Domain.Entities.School.Subject>
+@using SMIS.Domain.Enums
+@{
+    ViewData["Title"] = "Subjects";
+    var grouped = Model.GroupBy(s => s.Level).OrderBy(g => g.Key).ToList();
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-book me-2 text-primary"></i>Subjects & Learning Areas
+                </span>
+            </div>
+            <div class="header-right">
+                @if (!Model.Any())
+                {
+                    <form asp-action="SeedDefaultSubjects" asp-controller="Setup"
+                          method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-success btn-sm me-2">
+                            <i class="fas fa-magic me-1"></i> Load CBC Subjects
+                        </button>
+                    </form>
+                }
+                <button class="btn btn-primary btn-sm"
+                        data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                    <i class="fas fa-plus me-1"></i> Add Subject
+                </button>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show mb-4">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (!Model.Any())
+            {
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-book fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Subjects Yet</h5>
+                        <p class="text-muted">
+                            Click <strong>"Load CBC Subjects"</strong> to automatically
+                            create all CBC learning areas, or click
+                            <strong>"Add Subject"</strong> to add manually.
+                        </p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="stat-card">
+                            <div class="stat-icon blue">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div>
+                                <div class="stat-value">@Model.Count</div>
+                                <div class="stat-label">Total Subjects</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="stat-card">
+                            <div class="stat-icon green">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div>
+                                <div class="stat-value">@Model.Count(s => s.IsActive)</div>
+                                <div class="stat-label">Active Subjects</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="stat-card">
+                            <div class="stat-icon orange">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div>
+                                <div class="stat-value">@Model.Count(s => s.IsCompulsory)</div>
+                                <div class="stat-label">Compulsory</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="stat-card">
+                            <div class="stat-icon purple">
+                                <i class="fas fa-leaf"></i>
+                            </div>
+                            <div>
+                                <div class="stat-value">@Model.Count(s => s.IsCBCLearningArea)</div>
+                                <div class="stat-label">CBC Learning Areas</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                foreach (var group in grouped)
+                {
+                    string levelName = group.Key switch
+                    {
+                        SchoolLevel.PrePrimary => "Pre-Primary",
+                        SchoolLevel.LowerPrimary => "Lower Primary (Grade 1-3)",
+                        SchoolLevel.UpperPrimary => "Upper Primary (Grade 4-6)",
+                        SchoolLevel.JuniorSchool => "Junior School (Grade 7-9)",
+                        SchoolLevel.SeniorSchool => "Senior School (Grade 10-12)",
+                        _ => group.Key.ToString()
+                    };
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <i class="fas fa-book me-2 text-primary"></i>
+                            <strong>@levelName</strong>
+                            <span class="badge bg-primary ms-2">@group.Count() subjects</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Subject Name</th>
+                                        <th>Code</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var subject in group.OrderBy(s => s.OrderIndex))
+                                    {
+                                        <tr class="@(!subject.IsActive ? "table-secondary" : "")">
+                                            <td>
+                                                <i class="fas fa-book-open text-primary me-2"></i>
+                                                @subject.Name
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-dark">
+                                                    @subject.Code
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if (subject.IsCompulsory)
+                                                {
+                                                    <span class="badge bg-danger">Compulsory</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning text-dark">Optional</span>
+                                                }
+                                                @if (subject.IsCBCLearningArea)
+                                                {
+                                                    <span class="badge bg-success ms-1">CBC</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (subject.IsActive)
+                                                {
+                                                    <span class="badge bg-success">Active</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Inactive</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="d-flex gap-1">
+                                                    @* Toggle Compulsory/Optional *@
+                                                    <form asp-action="ToggleCompulsory"
+                                                          asp-controller="Setup"
+                                                          method="post" class="d-inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@subject.Id" />
+                                                        <button type="submit"
+                                                                class="btn btn-sm @(subject.IsCompulsory ? "btn-outline-secondary" : "btn-outline-danger")"
+                                                                title="@(subject.IsCompulsory ? "Set as Optional" : "Set as Compulsory")">
+                                                            @if (subject.IsCompulsory)
+                                                            {
+                                                                <i class="fas fa-toggle-on text-danger"></i>
+                                                                @: Optional
+                                                            }
+                                                            else
+                                                            {
+                                                                <i class="fas fa-toggle-off"></i>
+                                                                @: Compulsory
+                                                            }
+                                                        </button>
+                                                    </form>
+                                                    @* Toggle Active/Inactive *@
+                                                    <form asp-action="ToggleSubject"
+                                                          asp-controller="Setup"
+                                                          method="post" class="d-inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@subject.Id" />
+                                                        <button type="submit"
+                                                                class="btn btn-sm @(subject.IsActive ? "btn-outline-warning" : "btn-outline-success")"
+                                                                title="@(subject.IsActive ? "Deactivate" : "Activate")">
+                                                            @if (subject.IsActive)
+                                                            {
+                                                                <i class="fas fa-toggle-off"></i>
+                                                                @: Deactivate
+                                                            }
+                                                            else
+                                                            {
+                                                                <i class="fas fa-toggle-on"></i>
+                                                                @: Activate
+                                                            }
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@* ADD SUBJECT MODAL *@
+<div class="modal fade" id="addSubjectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>Add Subject
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="CreateSubject" asp-controller="Setup" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Subject Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control"
+                               placeholder="e.g. Mathematics" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Subject Code <span class="text-danger">*</span></label>
+                        <input type="text" name="code" class="form-control"
+                               placeholder="e.g. MATH" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="2"
+                                  placeholder="Optional description"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">School Level <span class="text-danger">*</span></label>
+                        <select name="level" class="form-control"
+                                asp-items="Html.GetEnumSelectList<SchoolLevel>()">
+                        </select>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="isCompulsory" value="true"
+                               class="form-check-input" id="isCompulsoryCheck" checked />
+                        <label class="form-check-label" for="isCompulsoryCheck">
+                            Compulsory subject
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Create Subject
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

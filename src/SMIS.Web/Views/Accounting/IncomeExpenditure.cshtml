@@ -1,0 +1,197 @@
+@using SMIS.Domain.Entities.Accounting
+@{
+    ViewData["Title"] = "Income & Expenditure";
+    var school = ViewBag.School as SMIS.Domain.Entities.School.SchoolProfile;
+    var incomeAccounts = ViewBag.IncomeAccounts as List<Account>
+        ?? new List<Account>();
+    var expenseAccounts = ViewBag.ExpenseAccounts as List<Account>
+        ?? new List<Account>();
+    var incomeBalances = ViewBag.IncomeBalances as Dictionary<int, decimal>
+        ?? new Dictionary<int, decimal>();
+    var expenseBalances = ViewBag.ExpenseBalances as Dictionary<int, decimal>
+        ?? new Dictionary<int, decimal>();
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header d-print-none">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-chart-line me-2 text-primary"></i>
+                    Income & Expenditure Statement
+                </span>
+            </div>
+            <div class="header-right">
+                <button onclick="window.print()"
+                        class="btn btn-success btn-sm me-2">
+                    <i class="fas fa-print me-1"></i> Print
+                </button>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @await Html.PartialAsync("_PrintHeader")
+
+            <div class="card mb-4 d-print-none">
+                <div class="card-body p-3">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">From</label>
+                            <input type="date" id="fromDate"
+                                   class="form-control"
+                                   value="@((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">To</label>
+                            <input type="date" id="toDate"
+                                   class="form-control"
+                                   value="@((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-primary w-100"
+                                    onclick="window.location='/Accounting/IncomeExpenditure?fromDate='+document.getElementById('fromDate').value+'&toDate='+document.getElementById('toDate').value">
+                                <i class="fas fa-search me-1"></i> View
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header text-center">
+                    <h5 class="fw-bold mb-0">
+                        @(school?.Name ?? "School")
+                    </h5>
+                    <h6 class="fw-bold mb-0">
+                        INCOME & EXPENDITURE STATEMENT
+                    </h6>
+                    <p class="text-muted small mb-0">
+                        For the period:
+                        @((DateTime)ViewBag.FromDate).ToString("dd MMM yyyy")
+                        to
+                        @((DateTime)ViewBag.ToDate).ToString("dd MMM yyyy")
+                    </p>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-bordered mb-0">
+                        <thead class="table-success">
+                            <tr>
+                                <th colspan="2">INCOME</th>
+                                <th class="text-end">KES</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var acc in incomeAccounts)
+                            {
+                                var bal = incomeBalances.GetValueOrDefault(
+                                    acc.Id, 0);
+                                <tr>
+                                    <td style="width:100px;">
+                                        <a href="/Accounting/GeneralLedger?accountId=@acc.Id&fromDate=@((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd")&toDate=@((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd")"
+                                           class="badge bg-light text-dark text-decoration-none">
+                                            @acc.Code
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="/Accounting/GeneralLedger?accountId=@acc.Id&fromDate=@((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd")&toDate=@((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd")"
+                                           class="text-decoration-none text-dark">
+                                            @acc.Name
+                                        </a>
+                                    </td>
+                                    <td class="text-end">
+                                        @bal.ToString("N2")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-success">
+                            <tr>
+                                <td colspan="2" class="fw-bold text-end">
+                                    TOTAL INCOME:
+                                </td>
+                                <td class="text-end fw-bold">
+                                    @(((decimal)ViewBag.TotalIncome).ToString("N2"))
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <table class="table table-bordered mb-0">
+                        <thead class="table-danger">
+                            <tr>
+                                <th colspan="2">EXPENDITURE</th>
+                                <th class="text-end">KES</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var acc in expenseAccounts)
+                            {
+                                var bal = expenseBalances.GetValueOrDefault(
+                                    acc.Id, 0);
+                                <tr>
+                                    <td style="width:100px;">
+                                        <a href="/Accounting/GeneralLedger?accountId=@acc.Id&fromDate=@((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd")&toDate=@((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd")"
+                                           class="badge bg-light text-dark text-decoration-none">
+                                            @acc.Code
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="/Accounting/GeneralLedger?accountId=@acc.Id&fromDate=@((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd")&toDate=@((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd")"
+                                           class="text-decoration-none text-dark">
+                                            @acc.Name
+                                        </a>
+                                    </td>
+                                    <td class="text-end">
+                                        @bal.ToString("N2")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-danger">
+                            <tr>
+                                <td colspan="2" class="fw-bold text-end">
+                                    TOTAL EXPENDITURE:
+                                </td>
+                                <td class="text-end fw-bold">
+                                    @(((decimal)ViewBag.TotalExpenses).ToString("N2"))
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <table class="table table-bordered mb-0">
+                        <tbody>
+                            <tr class="@(((decimal)ViewBag.Surplus) >= 0 ? "table-success" : "table-danger")">
+                                <td class="fw-bold fs-6 text-end">
+                                    @(((decimal)ViewBag.Surplus) >= 0
+                                        ? "SURPLUS (Excess of Income over Expenditure):"
+                                        : "DEFICIT (Excess of Expenditure over Income):")
+                                </td>
+                                <td class="text-end fw-bold fs-6"
+                                    style="width:200px;">
+                                    KES @Math.Abs((decimal)ViewBag.Surplus).ToString("N2")
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer d-print-block text-muted small text-center">
+                    @(school?.Name ?? "") |
+                    Generated: @DateTime.Now.ToString("dd MMM yyyy HH:mm")
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

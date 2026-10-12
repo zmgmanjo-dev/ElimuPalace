@@ -1,0 +1,140 @@
+@model List<SMIS.Domain.Entities.Academic.CBCAssessment>
+@using SMIS.Domain.Enums
+@{
+    Layout = "_PortalLayout";
+    ViewData["Title"] = "Report Card";
+    var student = ViewBag.Student as SMIS.Domain.Entities.Students.Student;
+    var reportCard = ViewBag.ReportCard as SMIS.Domain.Entities.Academic.CBCReportCard;
+}
+
+@await Html.PartialAsync("_ChildSelector")
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-bold mb-0">Report Card — @student!.FullName</h4>
+    <div class="d-flex gap-2">
+        @if (Model.Any())
+        {
+            <a href="/Portal/ReportCardPdf?studentId=@student.Id&termId=@ViewBag.SelectedTermId&download=false"
+               target="_blank" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-eye me-1"></i> Preview
+            </a>
+            <a href="/Portal/ReportCardPdf?studentId=@student.Id&termId=@ViewBag.SelectedTermId&download=true"
+               class="btn btn-danger btn-sm">
+                <i class="fas fa-file-pdf me-1"></i> Download
+            </a>
+        }
+        <a href="/Portal/Dashboard?studentId=@student.Id" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-end">
+            <input type="hidden" name="studentId" value="@student.Id" />
+            <div class="col-md-4">
+                <label class="form-label small fw-bold">Term</label>
+                <select name="termId" class="form-control" onchange="this.form.submit()">
+                    @foreach (var term in ViewBag.Terms)
+                    {
+                        if (ViewBag.SelectedTermId != null && ViewBag.SelectedTermId == term.Id)
+                        {
+                            <option value="@term.Id" selected>@term.AcademicYear.Name — @term.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@term.Id">@term.AcademicYear.Name — @term.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No Assessments Recorded</h5>
+            <p class="text-muted">No CBC assessments have been entered for this term yet.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>Learning Areas Assessment</strong>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Learning Area</th>
+                        <th class="text-center">Score</th>
+                        <th class="text-center">Performance</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in Model)
+                    {
+                        var (label, css) = a.PerformanceLevel switch
+                        {
+                            PerformanceLevel.BelowExpectation => ("Below Expectation", "bg-danger"),
+                            PerformanceLevel.ApproachingExpectation => ("Approaching Expectation", "bg-warning text-dark"),
+                            PerformanceLevel.MeetExpectation => ("Meets Expectation", "bg-success"),
+                            PerformanceLevel.ExceedsExpectation => ("Exceeds Expectation", "bg-primary"),
+                            _ => ("-", "bg-secondary")
+                        };
+                        <tr>
+                            <td><strong>@a.Subject.Name</strong></td>
+                            <td class="text-center">@(a.Score.HasValue ? $"{a.Score}/{a.MaxScore}" : "-")</td>
+                            <td class="text-center"><span class="badge @css">@label</span></td>
+                            <td class="text-muted small">@(a.TeacherRemarks ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if (reportCard != null)
+    {
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <strong>Character & Co-Curricular</strong>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2"><strong>Conduct:</strong> @(reportCard.Conduct ?? "-")</p>
+                        <p class="mb-2"><strong>Punctuality:</strong> @(reportCard.Punctuality ?? "-")</p>
+                        <p class="mb-2"><strong>Sports:</strong> @(reportCard.SportActivities ?? "-")</p>
+                        <p class="mb-0"><strong>Clubs:</strong> @(reportCard.ClubActivities ?? "-")</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <strong>Remarks</strong>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-3">
+                            <strong class="d-block text-muted small">Class Teacher</strong>
+                            @(reportCard.ClassTeacherRemarks ?? "No remarks yet.")
+                        </p>
+                        <p class="mb-0">
+                            <strong class="d-block text-muted small">Principal</strong>
+                            @(reportCard.PrincipalRemarks ?? "No remarks yet.")
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}

@@ -1,0 +1,365 @@
+@* Row 1 — Key Stats *@
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <a href="/Students" class="text-decoration-none">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div>
+                    <div class="stat-value">@ViewBag.TotalStudents</div>
+                    <div class="stat-label">Total Students</div>
+                    <small class="text-muted">
+                        @ViewBag.TotalBoys B / @ViewBag.TotalGirls G
+                    </small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a href="/Finance/Invoices" class="text-decoration-none">
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div>
+                    <div class="stat-value">
+                        KES @(((decimal)ViewBag.TodayCollection).ToString("N0"))
+                    </div>
+                    <div class="stat-label">Fee Collected Today</div>
+                    <small class="text-muted">
+                        Term: KES @(((decimal)ViewBag.TermCollection).ToString("N0"))
+                    </small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a href="/Attendance" class="text-decoration-none">
+            <div class="stat-card">
+                <div class="stat-icon @(((double)ViewBag.AttendanceRate) >= 80 ? "green" : "orange")">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div>
+                    <div class="stat-value">@ViewBag.AttendanceRate%</div>
+                    <div class="stat-label">Attendance Today</div>
+                    <small class="text-muted">
+                        @ViewBag.TodayPresent present / @ViewBag.TodayAbsent absent
+                    </small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a href="/Reports/OutstandingFees" class="text-decoration-none">
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div>
+                    <div class="stat-value">
+                        KES @(((decimal)ViewBag.TermOutstanding).ToString("N0"))
+                    </div>
+                    <div class="stat-label">Outstanding Fees</div>
+                    <small class="text-muted">Current term</small>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+@* Row 2 — Charts *@
+<div class="row g-4 mb-4">
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between">
+                <span>
+                    <i class="fas fa-chart-bar me-2 text-primary"></i>
+                    <strong>Monthly Fee Collection (Last 6 Months)</strong>
+                </span>
+                <a href="/Reports/FeeCollection" class="btn btn-sm btn-outline-primary">
+                    Full Report
+                </a>
+            </div>
+            <div class="card-body">
+                <canvas id="feeChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="fas fa-chart-pie me-2 text-primary"></i>
+                <strong>Today's Attendance</strong>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="attendanceChart" width="200" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Row 3 — More Charts *@
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="fas fa-layer-group me-2 text-primary"></i>
+                <strong>Students by Class</strong>
+            </div>
+            <div class="card-body">
+                <canvas id="classChart" height="160"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="fas fa-bolt me-2 text-primary"></i>
+                <strong>Quick Actions</strong>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <a href="/Students/Create" class="btn btn-outline-primary w-100 py-3">
+                            <i class="fas fa-user-plus d-block fa-lg mb-1"></i>
+                            Admit Student
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/Attendance" class="btn btn-outline-success w-100 py-3">
+                            <i class="fas fa-clipboard-check d-block fa-lg mb-1"></i>
+                            Take Attendance
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/Finance/Invoices" class="btn btn-outline-warning w-100 py-3">
+                            <i class="fas fa-file-invoice-dollar d-block fa-lg mb-1"></i>
+                            Fee Collection
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/CBC" class="btn btn-outline-info w-100 py-3">
+                            <i class="fas fa-book-open d-block fa-lg mb-1"></i>
+                            CBC Assessment
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/Reports" class="btn btn-outline-secondary w-100 py-3">
+                            <i class="fas fa-chart-bar d-block fa-lg mb-1"></i>
+                            Reports
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/Accounting" class="btn btn-outline-dark w-100 py-3">
+                            <i class="fas fa-calculator d-block fa-lg mb-1"></i>
+                            Accounting
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Row 4 — Recent Activity *@
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <span>
+                    <i class="fas fa-money-bill-wave me-2 text-success"></i>
+                    <strong>Recent Payments</strong>
+                </span>
+                <a href="/Finance/Invoices" class="btn btn-sm btn-outline-success">View All</a>
+            </div>
+            @{
+                var recentPayments = ViewBag.RecentPayments as List<SMIS.Domain.Entities.Finance.FeePayment>;
+            }
+            @if (recentPayments == null || !recentPayments.Any())
+            {
+                <div class="card-body text-center py-3">
+                    <p class="text-muted mb-0">No payments today.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            @foreach (var p in recentPayments)
+                            {
+                                <tr>
+                                    <td><span class="badge bg-success">@p.ReceiptNumber</span></td>
+                                    <td>@p.Student.FullName</td>
+                                    <td>@p.PaymentMethod</td>
+                                    <td class="text-end fw-bold text-success">KES @p.Amount.ToString("N0")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <span>
+                    <i class="fas fa-user-graduate me-2 text-primary"></i>
+                    <strong>Recent Admissions</strong>
+                </span>
+                <a href="/Students" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            @{
+                var recentStudents = ViewBag.RecentStudents as List<SMIS.Domain.Entities.Students.Student>;
+            }
+            @if (recentStudents == null || !recentStudents.Any())
+            {
+                <div class="card-body text-center py-3">
+                    <p class="text-muted mb-0">No recent admissions.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            @foreach (var s in recentStudents)
+                            {
+                                <tr>
+                                    <td><span class="badge bg-primary">@s.AdmissionNumber</span></td>
+                                    <td><strong>@s.FullName</strong></td>
+                                    <td class="text-muted small">@(s.ClassLevel?.Name ?? "-")</td>
+                                    <td class="text-muted small">@s.AdmissionDate.ToString("dd MMM")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@* Charts — inline script, no @section (partials can't use sections) *@
+<script>
+    @{
+        var monthLabels = new List<string>();
+        var monthData = new List<decimal>();
+        for (int m = 5; m >= 0; m--)
+        {
+            var d = DateTime.Today.AddMonths(-m);
+            monthLabels.Add(d.ToString("MMM yy"));
+            decimal found = 0;
+            try
+            {
+                if (ViewBag.MonthlyCollection != null)
+                {
+                    foreach (var item in ViewBag.MonthlyCollection)
+                    {
+                        if (item.Year == d.Year && item.Month == d.Month)
+                        {
+                            found = (decimal)item.Total;
+                            break;
+                        }
+                    }
+                }
+            }
+            catch { }
+            monthData.Add(found);
+        }
+    }
+
+    try {
+        new Chart(document.getElementById('feeChart'), {
+            type: 'bar',
+            data: {
+                labels: [@Html.Raw(string.Join(",", monthLabels.Select(l => $"'{l}'")))],
+                datasets: [{
+                    label: 'Fee Collection (KES)',
+                    data: [@string.Join(",", monthData)],
+                    backgroundColor: 'rgba(26,86,219,0.7)',
+                    borderColor: '#1a56db',
+                    borderWidth: 1,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: v => 'KES ' + v.toLocaleString() }
+                    }
+                }
+            }
+        });
+    } catch(e) { console.log('Fee chart error:', e); }
+
+    try {
+        new Chart(document.getElementById('attendanceChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Present', 'Absent', 'Not Taken'],
+                datasets: [{
+                    data: [
+                        @(ViewBag.TodayPresent ?? 0),
+                        @(ViewBag.TodayAbsent ?? 0),
+                        @(Math.Max(0, (int)(ViewBag.TotalStudents ?? 0) -
+                            (int)(ViewBag.TodayPresent ?? 0) -
+                            (int)(ViewBag.TodayAbsent ?? 0)))
+                    ],
+                    backgroundColor: ['#057a55', '#dc2626', '#e5e7eb'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    } catch(e) { console.log('Attendance chart error:', e); }
+
+    @{
+        var classLabels = new List<string>();
+        var classCounts = new List<int>();
+        try
+        {
+            if (ViewBag.StudentsByClass != null)
+            {
+                foreach (var item in ViewBag.StudentsByClass)
+                {
+                    classLabels.Add((string)item.Class ?? "Unknown");
+                    classCounts.Add((int)item.Count);
+                }
+            }
+        }
+        catch { }
+    }
+
+    try {
+        new Chart(document.getElementById('classChart'), {
+            type: 'bar',
+            data: {
+                labels: [@Html.Raw(string.Join(",", classLabels.Select(l => $"'{l}'")))],
+                datasets: [{
+                    label: 'Students',
+                    data: [@string.Join(",", classCounts)],
+                    backgroundColor: [
+                        '#1a56db','#057a55','#d97706','#dc2626',
+                        '#7c3aed','#0891b2','#db2777','#65a30d',
+                        '#ea580c','#0284c7','#9333ea'
+                    ],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    } catch(e) { console.log('Class chart error:', e); }
+</script>

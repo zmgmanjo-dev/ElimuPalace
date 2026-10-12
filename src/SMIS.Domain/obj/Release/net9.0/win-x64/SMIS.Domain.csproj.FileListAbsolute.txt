@@ -1,0 +1,11 @@
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Domain\bin\Release\net9.0\win-x64\SMIS.Domain.deps.json
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Domain\bin\Release\net9.0\win-x64\SMIS.Domain.dll
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Domain\bin\Release\net9.0\win-x64\SMIS.Domain.pdb
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Domain\obj\Release\net9.0\win-x64\SMIS.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Domain\obj\Release\net9.0\win-x64\SMIS.Domain.AssemblyInfoInputs.cache
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Domain\obj\Release\net9.0\win-x64\SMIS.Domain.AssemblyInfo.cs
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Domain\obj\Release\net9.0\win-x64\SMIS.Domain.csproj.CoreCompileInputs.cache
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Domain\obj\Release\net9.0\win-x64\SMIS.Domain.dll
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Domain\obj\Release\net9.0\win-x64\refint\SMIS.Domain.dll
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Domain\obj\Release\net9.0\win-x64\SMIS.Domain.pdb
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Domain\obj\Release\net9.0\win-x64\ref\SMIS.Domain.dll

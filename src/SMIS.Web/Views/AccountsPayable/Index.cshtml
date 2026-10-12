@@ -1,0 +1,201 @@
+@using SMIS.Domain.Entities.Accounting
+@{
+    ViewData["Title"] = "Accounts Payable";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-file-invoice me-2 text-primary"></i>
+                    Accounts Payable
+                </span>
+            </div>
+            <div class="header-right">
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@ViewBag.TotalSuppliers</div>
+                            <div class="stat-label">Suppliers</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@ViewBag.UnpaidInvoices</div>
+                            <div class="stat-label">Unpaid Invoices</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.TotalOwing).ToString("N0"))
+                            </div>
+                            <div class="stat-label">Total Owing</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.TotalExpenses).ToString("N0"))
+                            </div>
+                            <div class="stat-label">Expenses This Year</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <a href="/AccountsPayable/Suppliers"
+                       class="card text-decoration-none border-0 shadow-sm">
+                        <div class="card-body p-4 text-center">
+                            <i class="fas fa-truck fa-2x text-primary mb-2"></i>
+                            <h6 class="fw-bold">Suppliers</h6>
+                            <p class="text-muted small mb-0">
+                                Manage supplier records
+                            </p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/AccountsPayable/SupplierInvoices"
+                       class="card text-decoration-none border-0 shadow-sm">
+                        <div class="card-body p-4 text-center">
+                            <i class="fas fa-file-invoice-dollar fa-2x text-warning mb-2"></i>
+                            <h6 class="fw-bold">Supplier Invoices</h6>
+                            <p class="text-muted small mb-0">
+                                Record & pay supplier invoices
+                            </p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/AccountsPayable/Expenses"
+                       class="card text-decoration-none border-0 shadow-sm">
+                        <div class="card-body p-4 text-center">
+                            <i class="fas fa-receipt fa-2x text-danger mb-2"></i>
+                            <h6 class="fw-bold">Expenses</h6>
+                            <p class="text-muted small mb-0">
+                                Record direct expenses
+                            </p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/AccountsPayable/SupplierInvoices?status=Unpaid"
+                       class="card text-decoration-none border-0 shadow-sm">
+                        <div class="card-body p-4 text-center">
+                            <i class="fas fa-exclamation-circle fa-2x text-danger mb-2"></i>
+                            <h6 class="fw-bold">Outstanding</h6>
+                            <p class="text-muted small mb-0">
+                                @ViewBag.OverdueInvoices overdue invoices
+                            </p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <span>
+                        <strong>Recent Supplier Invoices</strong>
+                    </span>
+                    <a href="/AccountsPayable/SupplierInvoices"
+                       class="btn btn-sm btn-outline-primary">
+                        View All
+                    </a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Invoice No.</th>
+                                <th>Supplier</th>
+                                <th>Date</th>
+                                <th>Due Date</th>
+                                <th class="text-end">Amount</th>
+                                <th class="text-end">Balance</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var inv in
+                                (List<SupplierInvoice>)ViewBag.RecentInvoices)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@inv.InvoiceNumber</strong>
+                                    </td>
+                                    <td>@inv.Supplier.Name</td>
+                                    <td>
+                                        @inv.InvoiceDate.ToString("dd MMM yyyy")
+                                    </td>
+                                    <td class="@(inv.DueDate < DateTime.Today && inv.Status != SupplierInvoiceStatus.Paid ? "text-danger fw-bold" : "")">
+                                        @inv.DueDate.ToString("dd MMM yyyy")
+                                    </td>
+                                    <td class="text-end">
+                                        KES @inv.TotalAmount.ToString("N0")
+                                    </td>
+                                    <td class="text-end text-danger fw-bold">
+                                        KES @inv.Balance.ToString("N0")
+                                    </td>
+                                    <td>
+                                        @switch (inv.Status)
+                                        {
+                                            case SupplierInvoiceStatus.Paid:
+                                                <span class="badge bg-success">Paid</span>
+                                                break;
+                                            case SupplierInvoiceStatus.PartiallyPaid:
+                                                <span class="badge bg-warning text-dark">Partial</span>
+                                                break;
+                                            case SupplierInvoiceStatus.Unpaid:
+                                                <span class="badge bg-danger">Unpaid</span>
+                                                break;
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

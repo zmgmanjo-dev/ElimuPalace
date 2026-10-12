@@ -1,0 +1,116 @@
+@model SMIS.Domain.Entities.Accounting.StaffPayroll
+@{
+    ViewData["Title"] = "Staff Details";
+    var history = ViewBag.PayrollHistory as List<SMIS.Domain.Entities.Accounting.PayrollRunLine>
+        ?? new List<SMIS.Domain.Entities.Accounting.PayrollRunLine>();
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-user me-2 text-primary"></i>
+                    @Model.FullName
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Payroll/EditStaff/@Model.Id" class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="fas fa-edit me-1"></i> Edit
+                </a>
+                <a href="/Payroll/Staff" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between">
+                    <span><i class="fas fa-id-card me-2 text-primary"></i><strong>Staff Details</strong></span>
+                    @if (Model.IsActive)
+                    {
+                        <span class="badge bg-success">Active</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Inactive</span>
+                    }
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-3"><strong>Staff No:</strong> @Model.StaffNumber</div>
+                        <div class="col-md-3"><strong>Type:</strong> @Model.StaffType</div>
+                        <div class="col-md-3"><strong>Employment:</strong> @Model.EmploymentType</div>
+                        <div class="col-md-3"><strong>Email:</strong> @(Model.Email ?? "-")</div>
+                        <div class="col-md-3"><strong>National ID:</strong> @(Model.NationalId ?? "-")</div>
+                        <div class="col-md-3"><strong>KRA PIN:</strong> @(Model.KRAPin ?? "-")</div>
+                        <div class="col-md-3"><strong>NSSF No:</strong> @(Model.NSSFNumber ?? "-")</div>
+                        <div class="col-md-3"><strong>SHA No:</strong> @(Model.shaNumber ?? "-")</div>
+                        <div class="col-md-3"><strong>Bank:</strong> @(Model.BankName ?? "-")</div>
+                        <div class="col-md-3"><strong>Account No:</strong> @(Model.BankAccount ?? "-")</div>
+                        <div class="col-md-3"><strong>Basic Salary:</strong> KES @Model.BasicSalary.ToString("N0")</div>
+                        <div class="col-md-3"><strong>Gross Salary:</strong> KES @Model.GrossSalary.ToString("N0")</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-history me-2 text-success"></i><strong>Payroll History</strong>
+                    <span class="badge bg-primary ms-2">@history.Count</span>
+                </div>
+                @if (!history.Any())
+                {
+                    <div class="card-body text-center py-4">
+                        <p class="text-muted mb-0">No payroll history yet.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th class="text-end">Gross</th>
+                                    <th class="text-end">Deductions</th>
+                                    <th class="text-end">Net Pay</th>
+                                    <th>Payslip</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var line in history)
+                                {
+                                    <tr>
+                                        <td>@line.PayrollRun.MonthName</td>
+                                        <td class="text-end">KES @line.GrossSalary.ToString("N0")</td>
+                                        <td class="text-end text-danger">KES @line.TotalDeductions.ToString("N0")</td>
+                                        <td class="text-end fw-bold text-success">KES @line.NetPay.ToString("N0")</td>
+                                        <td>
+                                            <a href="/Payroll/DownloadPayslip?lineId=@line.Id"
+                                               class="btn btn-sm btn-outline-primary" target="_blank">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

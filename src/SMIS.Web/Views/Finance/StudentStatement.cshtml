@@ -1,0 +1,227 @@
+@model List<SMIS.Domain.Entities.Finance.StudentInvoice>
+@{
+    ViewData["Title"] = "Fee Statement";
+    var student = ViewBag.Student as SMIS.Domain.Entities.Students.Student;
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-file-alt me-2 text-primary"></i>
+                    Fee Statement — @student?.FullName
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Finance/Invoices"
+                   class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+
+            @* Student Info Card *@
+            <div class="card mb-4">
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="fw-bold">@student?.FullName</h5>
+                            <p class="text-muted mb-0">
+                                <strong>Admission No:</strong>
+                                @student?.AdmissionNumber<br/>
+                                <strong>Class:</strong>
+                                @(student?.ClassLevel?.Name ?? "-")
+                            </p>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <h6 class="text-muted">FEE SUMMARY</h6>
+                            <p class="mb-0">
+                                <strong>Total Invoiced:</strong>
+                                KES @(((decimal)ViewBag.TotalInvoiced).ToString("N0"))<br/>
+                                <strong class="text-success">Total Paid:</strong>
+                                <span class="text-success">
+                                    KES @(((decimal)ViewBag.TotalPaid).ToString("N0"))
+                                </span><br/>
+                                <strong class="text-danger">Outstanding:</strong>
+                                <span class="text-danger">
+                                    KES @(((decimal)ViewBag.TotalBalance).ToString("N0"))
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Summary Cards *@
+            <div class="row g-3 mb-4">
+                <div class="col-sm-4">
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.TotalInvoiced).ToString("N0"))
+                            </div>
+                            <div class="stat-label">Total Invoiced</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.TotalPaid).ToString("N0"))
+                            </div>
+                            <div class="stat-label">Total Paid</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.TotalBalance).ToString("N0"))
+                            </div>
+                            <div class="stat-label">Outstanding</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Invoices *@
+            @if (!Model.Any())
+            {
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-file-invoice fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Invoices Found</h5>
+                        <p class="text-muted">No fee invoices have been generated for this student.</p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                @foreach (var invoice in Model)
+                {
+                    <div class="card mb-3">
+                        <div class="card-header d-flex justify-content-between">
+                            <span>
+                                <i class="fas fa-file-invoice me-2 text-primary"></i>
+                                <strong>@invoice.InvoiceNumber</strong>
+                                — @invoice.AcademicYear.Name @invoice.AcademicTerm.Name
+                            </span>
+                            @switch (invoice.Status)
+                            {
+                                case SMIS.Domain.Entities.Finance.InvoiceStatus.Paid:
+                                    <span class="badge bg-success">PAID</span>
+                                    break;
+                                case SMIS.Domain.Entities.Finance.InvoiceStatus.PartiallyPaid:
+                                    <span class="badge bg-warning text-dark">PARTIAL</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-danger">UNPAID</span>
+                                    break;
+                            }
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Description</th>
+                                        <th class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in invoice.Items)
+                                    {
+                                        <tr>
+                                            <td>@item.Description</td>
+                                            <td class="text-end">
+                                                KES @item.NetAmount.ToString("N0")
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td class="fw-bold">Total</td>
+                                        <td class="text-end fw-bold">
+                                            KES @invoice.TotalAmount.ToString("N0")
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-success fw-bold">Paid</td>
+                                        <td class="text-end text-success fw-bold">
+                                            KES @invoice.TotalPaid.ToString("N0")
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-danger fw-bold">Balance</td>
+                                        <td class="text-end text-danger fw-bold">
+                                            KES @invoice.Balance.ToString("N0")
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                            @if (invoice.Payments.Any())
+                            {
+                                <div class="p-3 border-top">
+                                    <strong class="small text-muted">PAYMENTS:</strong>
+                                    @foreach (var payment in invoice.Payments)
+                                    {
+                                        <div class="d-flex justify-content-between small mt-1">
+                                            <span>
+                                                <span class="badge bg-success me-1">
+                                                    @payment.ReceiptNumber
+                                                </span>
+                                                @payment.PaymentDate.ToString("dd MMM yyyy")
+                                                — @payment.PaymentMethod
+                                                @if (payment.ReferenceNumber != null)
+                                                {
+                                                    <span class="text-muted">
+                                                        (@payment.ReferenceNumber)
+                                                    </span>
+                                                }
+                                            </span>
+                                            <strong class="text-success">
+                                                KES @payment.Amount.ToString("N0")
+                                            </strong>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        <div class="card-footer text-end">
+                            <a href="/Finance/InvoiceDetails/@invoice.Id"
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye me-1"></i>View Full Invoice
+                            </a>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,77 @@
+@model List<SMIS.Domain.Entities.Communication.StudentFeedback>
+@{
+    ViewData["Title"] = "Student Feedback";
+    var student = ViewBag.Student as SMIS.Domain.Entities.Students.Student;
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-comments me-2 text-primary"></i>
+                    Feedback — @student!.FullName
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Students/Details/@student.Id" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Profile
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="card">
+                <div class="card-header">
+                    <strong>Conversation with Parent</strong>
+                </div>
+                <div class="card-body" style="max-height:500px; overflow-y:auto; background:#f9fafb;">
+                    @if (!Model.Any())
+                    {
+                        <p class="text-muted text-center mb-0 py-4">No messages yet.</p>
+                    }
+                    else
+                    {
+                        @foreach (var m in Model)
+                        {
+                            <div class="d-flex mb-3 @(m.IsFromStaff ? "justify-content-end" : "justify-content-start")">
+                                <div class="p-3 rounded @(m.IsFromStaff ? "bg-primary text-white" : "bg-white border")"
+                                     style="max-width:70%;">
+                                    <div class="small fw-bold mb-1 @(m.IsFromStaff ? "text-white-50" : "text-primary")">
+                                        @(m.IsFromStaff ? "You (Staff)" : "Parent")
+                                    </div>
+                                    <div>@m.Message</div>
+                                    <div class="small mt-1 @(m.IsFromStaff ? "text-white-50" : "text-muted")"
+                                         style="font-size:11px;">
+                                        @m.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+                <div class="card-footer bg-white">
+                    <form asp-action="SendStaffFeedback" method="post" class="d-flex gap-2">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="studentId" value="@student.Id" />
+                        <input type="text" name="message" class="form-control"
+                               placeholder="Type your reply..." required autocomplete="off" />
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,335 @@
+@{
+    var school = ViewBag.School as SMIS.Domain.Entities.School.SchoolProfile;
+    var path = Context.Request.Path.Value?.ToLower() ?? "";
+}
+
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <div class="sidebar-brand-icon">
+            @if (school?.LogoPath != null)
+            {
+                <img src="@school.LogoPath"
+                     style="width:38px;height:38px;border-radius:10px;
+                            object-fit:cover;" />
+            }
+            else
+            {
+                <i class="fas fa-graduation-cap"></i>
+            }
+        </div>
+        <div class="sidebar-brand-text">
+            <h6>@(school?.Name ?? "SMIS")</h6>
+            <small>CBC Kenya</small>
+        </div>
+    </div>
+
+    <div class="sidebar-nav">
+
+        @* Dashboard *@
+        <a href="/Dashboard"
+           class="nav-item-link @(path.StartsWith("/dashboard") ? "active" : "")">
+            <i class="fas fa-th-large"></i> Dashboard
+        </a>
+
+        @* ── ACADEMIC ───────────────────── *@
+        <div class="nav-section-title">Academic</div>
+
+        @* Students *@
+        <a href="#studentsMenu" data-bs-toggle="collapse"
+           class="nav-item-link @(path.StartsWith("/students") ? "active" : "")">
+            <i class="fas fa-user-graduate"></i> Students
+            <i class="fas fa-chevron-down ms-auto" style="font-size:10px;"></i>
+        </a>
+        <div class="collapse @(path.StartsWith("/students") ? "show" : "")"
+     id="studentsMenu">
+    <a href="/Students"
+       class="nav-sub-link @(path == "/students" ? "active" : "")">
+        All Students
+    </a>
+    <a href="/Students/Create"
+       class="nav-sub-link @(path == "/students/create" ? "active" : "")">
+        Admit Student
+    </a>
+    <a href="/Promotion"
+       class="nav-sub-link @(path == "/promotion" ? "active" : "")">
+        Promote Students
+    </a>
+</div>
+
+        @* Attendance *@
+        <a href="#attendanceMenu" data-bs-toggle="collapse"
+           class="nav-item-link @(path.StartsWith("/attendance") ? "active" : "")">
+            <i class="fas fa-calendar-check"></i> Attendance
+            <i class="fas fa-chevron-down ms-auto" style="font-size:10px;"></i>
+        </a>
+        <div class="collapse @(path.StartsWith("/attendance") ? "show" : "")"
+             id="attendanceMenu">
+            <a href="/Attendance"
+               class="nav-sub-link @(path == "/attendance" ? "active" : "")">
+                Take Attendance
+            </a>
+            <a href="/Attendance/Report"
+               class="nav-sub-link @(path == "/attendance/report" ? "active" : "")">
+                Attendance Report
+            </a>
+        </div>
+
+        @* CBC Academic *@
+        <a href="#cbcMenu" data-bs-toggle="collapse"
+           class="nav-item-link @(path.StartsWith("/cbc") ? "active" : "")">
+            <i class="fas fa-book-open"></i> CBC Academic
+            <i class="fas fa-chevron-down ms-auto" style="font-size:10px;"></i>
+        </a>
+        <div class="collapse @(path.StartsWith("/cbc") ? "show" : "")"
+             id="cbcMenu">
+            <a href="/CBC"
+               class="nav-sub-link @(path == "/cbc" ? "active" : "")">
+                Assessments
+            </a>
+        </div>
+
+        @* Library *@
+        <a href="#libraryMenu" data-bs-toggle="collapse"
+           class="nav-item-link @(path.StartsWith("/library") ? "active" : "")">
+            <i class="fas fa-book"></i> Library
+            <i class="fas fa-chevron-down ms-auto" style="font-size:10px;"></i>
+        </a>
+        <div class="collapse @(path.StartsWith("/library") ? "show" : "")"
+             id="libraryMenu">
+            <a href="/Library"
+               class="nav-sub-link @(path == "/library" ? "active" : "")">
+                Dashboard
+            </a>
+            <a href="/Library/Books"
+               class="nav-sub-link @(path == "/library/books" ? "active" : "")">
+                Books
+            </a>
+            <a href="/Library/Issues"
+               class="nav-sub-link @(path == "/library/issues" ? "active" : "")">
+                Issue / Return
+            </a>
+            <a href="/Library/Categories"
+               class="nav-sub-link @(path == "/library/categories" ? "active" : "")">
+                Categories
+            </a>
+        </div>
+
+        @* ── FINANCE ────────────────────── *@
+        <div class="nav-section-title">Finance</div>
+
+        @* Fee Management *@
+        <a href="#feeMenu" data-bs-toggle="collapse"
+           class="nav-item-link @(path.StartsWith("/finance") ? "active" : "")">
+            <i class="fas fa-file-invoice-dollar"></i> Fee Management
+            <i class="fas fa-chevron-down ms-auto" style="font-size:10px;"></i>
+        </a>
+        <div class="collapse @(path.StartsWith("/finance") ? "show" : "")"
+             id="feeMenu">
+            <a href="/Finance/Invoices"
+               class="nav-sub-link @(path == "/finance/invoices" ? "active" : "")">
+                Invoices
+            </a>
+            <a href="/Finance/BulkInvoice"
+               class="nav-sub-link @(path == "/finance/bulkinvoice" ? "active" : "")">
+                Bulk Invoices
+            </a>
+            <a href="/Finance/FeeCategories"
+               class="nav-sub-link @(path == "/finance/feecategories" ? "active" : "")">
+                Fee Categories
+            </a>
+            <a href="/Finance/FeeStructures"
+               class="nav-sub-link @(path == "/finance/feestructures" ? "active" : "")">
+                Fee Structures
+            </a>
+        </div>
+
+        @* Accounting *@
+        <a href="#accountingMenu" data-bs-toggle="collapse"
+           class="nav-item-link @(path.StartsWith("/accounting") ? "active" : "")">
+            <i class="fas fa-calculator"></i> Accounting
+            <i class="fas fa-chevron-down ms-auto" style="font-size:10px;"></i>
+        </a>
+        <div class="collapse @(path.StartsWith("/accounting") ? "show" : "")"
+             id="accountingMenu">
+            <a href="/Accounting"
+               class="nav-sub-link @(path == "/accounting" ? "active" : "")">
+                Dashboard
+            </a>
+            <a href="/Accounting/ChartOfAccounts"
+               class="nav-sub-link">
+                Chart of Accounts
+            </a>
+            <a href="/Accounting/JournalEntries"
+               class="nav-sub-link">
+                Journal Entries
+            </a>
+            <a href="/Accounting/Cashbook"
+               class="nav-sub-link @(path == "/accounting/cashbook" ? "active" : "")">
+                Cashbook
+            </a>
+            <a href="/Accounting/StudentLedger"
+               class="nav-sub-link">
+                Student Ledger
+            </a>
+            <a href="/Accounting/GeneralLedger"
+               class="nav-sub-link">
+                General Ledger
+            </a>
+            <a href="/Accounting/TrialBalance"
+               class="nav-sub-link">
+                Trial Balance
+            </a>
+            <a href="/Accounting/IncomeExpenditure"
+               class="nav-sub-link">
+                Income & Expenditure
+            </a>
+            <a href="/Accounting/BalanceSheet"
+               class="nav-sub-link">
+                Balance Sheet
+            </a>
+        </div>
+
+        @* Accounts Payable *@
+        <a href="#apMenu" data-bs-toggle="collapse"
+           class="nav-item-link @(path.StartsWith("/accountspayable") ? "active" : "")">
+            <i class="fas fa-file-invoice"></i> Accounts Payable
+            <i class="fas fa-chevron-down ms-auto" style="font-size:10px;"></i>
+        </a>
+        <div class="collapse @(path.StartsWith("/accountspayable") ? "show" : "")"
+             id="apMenu">
+            <a href="/AccountsPayable"
+               class="nav-sub-link @(path == "/accountspayable" ? "active" : "")">
+                Dashboard
+            </a>
+            <a href="/AccountsPayable/Suppliers"
+               class="nav-sub-link">
+                Suppliers
+            </a>
+            <a href="/AccountsPayable/SupplierInvoices"
+               class="nav-sub-link">
+                Supplier Invoices
+            </a>
+            <a href="/AccountsPayable/Expenses"
+               class="nav-sub-link">
+                Expenses
+            </a>
+        </div>
+
+        @* Payroll *@
+        <a href="#payrollMenu" data-bs-toggle="collapse"
+           class="nav-item-link @(path.StartsWith("/payroll") ? "active" : "")">
+            <i class="fas fa-money-check-alt"></i> Payroll
+            <i class="fas fa-chevron-down ms-auto" style="font-size:10px;"></i>
+        </a>
+        <div class="collapse @(path.StartsWith("/payroll") ? "show" : "")"
+             id="payrollMenu">
+            <a href="/Payroll/Staff"
+               class="nav-sub-link @(path == "/payroll/staff" ? "active" : "")">
+                Staff Setup
+            </a>
+            <a href="/Payroll/Runs"
+               class="nav-sub-link @(path == "/payroll/runs" ? "active" : "")">
+                Payroll Runs
+            </a>
+        </div>
+
+        @* ── REPORTS ─────────────────────── *@
+        <div class="nav-section-title">Reports</div>
+
+        <a href="#reportsMenu" data-bs-toggle="collapse"
+           class="nav-item-link @(path.StartsWith("/reports") ? "active" : "")">
+            <i class="fas fa-chart-bar"></i> Reports
+            <i class="fas fa-chevron-down ms-auto" style="font-size:10px;"></i>
+        </a>
+        <div class="collapse @(path.StartsWith("/reports") ? "show" : "")"
+             id="reportsMenu">
+            <a href="/Reports" class="nav-sub-link">Reports Centre</a>
+            <a href="/Reports/FeeCollection" class="nav-sub-link">Fee Collection</a>
+            <a href="/Reports/OutstandingFees" class="nav-sub-link">Outstanding Fees</a>
+            <a href="/Reports/DailyCollection" class="nav-sub-link">Daily Collection</a>
+            <a href="/Reports/StudentStatement" class="nav-sub-link">Student Statement</a>
+            <a href="/Reports/AttendanceSummary" class="nav-sub-link">Attendance</a>
+            <a href="/Reports/CBCPerformance" class="nav-sub-link">CBC Performance</a>
+            <a href="/Reports/StudentEnrollment" class="nav-sub-link">Enrollment</a>
+            <a href="/Reports/ClassList" class="nav-sub-link">Class List</a>
+            <a href="/Accounting/IncomeExpenditure" class="nav-sub-link">Income & Expenditure</a>
+            <a href="/Accounting/BalanceSheet" class="nav-sub-link">Balance Sheet</a>
+            <a href="/Reports/AuditTrail" class="nav-sub-link">Audit Trail</a>
+        </div>
+        <a href="/Newsletter" class="nav-sub-link">Newsletter</a>
+
+        @* ── ADMIN ──────────────────────── *@
+        <div class="nav-section-title">Administration</div>
+
+        @* User Management *@
+        <a href="#usersMenu" data-bs-toggle="collapse"
+           class="nav-item-link @(path.StartsWith("/usermanagement") || path.StartsWith("/permissions") ? "active" : "")">
+            <i class="fas fa-users-cog"></i> User Management
+            <i class="fas fa-chevron-down ms-auto" style="font-size:10px;"></i>
+        </a>
+        <div class="collapse @(path.StartsWith("/usermanagement") || path.StartsWith("/permissions") ? "show" : "")"
+             id="usersMenu">
+            <a href="/UserManagement"
+               class="nav-sub-link @(path == "/usermanagement" ? "active" : "")">
+                Users
+            </a>
+            <a href="/UserManagement/Roles"
+               class="nav-sub-link">
+                Roles
+            </a>
+            <a href="/Permissions"
+               class="nav-sub-link @(path == "/permissions" ? "active" : "")">
+                Permissions
+            </a>
+            <a href="/UserManagement/ParentAccounts" 
+               class="nav-sub-link @(path == "/usermanagement/parentaccounts" ? "active" : "")">
+                Parent Accounts
+            </a>
+        </div>
+
+        @* System Setup *@
+        <a href="#setupMenu" data-bs-toggle="collapse"
+           class="nav-item-link @(path.StartsWith("/setup") ? "active" : "")">
+            <i class="fas fa-cog"></i> System Setup
+            <i class="fas fa-chevron-down ms-auto" style="font-size:10px;"></i>
+        </a>
+        <div class="collapse @(path.StartsWith("/setup") ? "show" : "")"
+             id="setupMenu">
+            <a href="/Setup/SchoolInfo"
+               class="nav-sub-link @(path == "/setup/schoolinfo" ? "active" : "")">
+                School Info
+            </a>
+            <a href="/Setup/AcademicYears"
+               class="nav-sub-link">
+                Academic Years
+            </a>
+            <a href="/Setup/Classes"
+               class="nav-sub-link">
+                Classes & Streams
+            </a>
+            <a href="/Setup/Subjects"
+               class="nav-sub-link">
+                Subjects
+            </a>
+        </div>
+
+    </div>
+</nav>
+
+<script>
+    (function () {
+        var sidebar = document.getElementById('sidebar');
+        if (!sidebar) return;
+
+        // Restore scroll position on page load
+        var savedScroll = sessionStorage.getItem('sidebarScrollTop');
+        if (savedScroll !== null) {
+            sidebar.scrollTop = parseInt(savedScroll, 10);
+        }
+
+        // Save scroll position whenever the user scrolls the sidebar
+        sidebar.addEventListener('scroll', function () {
+            sessionStorage.setItem('sidebarScrollTop', sidebar.scrollTop);
+        });
+    })();
+</script>

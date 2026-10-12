@@ -1,0 +1,265 @@
+@model List<SMIS.Domain.Entities.Finance.StudentInvoice>
+@{
+    ViewData["Title"] = "Outstanding Fees Report";
+    var school = ViewBag.School as SMIS.Domain.Entities.School.SchoolProfile;
+    ViewBag.ReportTitle = "Outstanding Fees Report";
+    ViewBag.ReportSubtitle = $"As at {DateTime.Today:dd MMM yyyy}";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header d-print-none">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-exclamation-circle me-2 text-danger"></i>
+                    Outstanding Fees Report
+                </span>
+            </div>
+            <div class="header-right">
+                <button onclick="window.print()"
+                        class="btn btn-success btn-sm me-2">
+                    <i class="fas fa-print me-1"></i> Print
+                </button>
+                <a href="/Reports" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @await Html.PartialAsync("_PrintHeader")
+
+            <div class="card mb-4 d-print-none">
+                <div class="card-body p-3">
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Term</label>
+                            <select id="termSelect" class="form-control">
+                                <option value="">All Terms</option>
+                                @foreach (var term in ViewBag.Terms)
+                                {
+                                    if (ViewBag.TermId != null &&
+                                        ViewBag.TermId == term.Id)
+                                    {
+                                        <option value="@term.Id" selected>
+                                            @term.AcademicYear.Name - @term.Name
+                                        </option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@term.Id">
+                                            @term.AcademicYear.Name - @term.Name
+                                        </option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Class</label>
+                            <select id="classSelect" class="form-control">
+                                <option value="">All Classes</option>
+                                @foreach (var cls in ViewBag.Classes)
+                                {
+                                    if (ViewBag.ClassId != null &&
+                                        ViewBag.ClassId == cls.Id)
+                                    {
+                                        <option value="@cls.Id" selected>
+                                            @cls.Name
+                                        </option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@cls.Id">@cls.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Student</label>
+                            <select id="studentSelect" class="form-control">
+                                <option value="">All Students</option>
+                                @foreach (var s in ViewBag.Students)
+                                {
+                                    if (ViewBag.StudentId != null &&
+                                        ViewBag.StudentId == s.Id)
+                                    {
+                                        <option value="@s.Id" selected>
+                                            @s.AdmissionNumber — @s.FullName
+                                        </option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@s.Id">
+                                            @s.AdmissionNumber — @s.FullName
+                                        </option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-primary w-100"
+                                    onclick="applyFilter()">
+                                <i class="fas fa-search me-1"></i> Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-sm-4">
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.TotalInvoiced).ToString("N0"))
+                            </div>
+                            <div class="stat-label">Total Invoiced</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.TotalPaid).ToString("N0"))
+                            </div>
+                            <div class="stat-label">Total Paid</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.TotalOutstanding).ToString("N0"))
+                            </div>
+                            <div class="stat-label">Outstanding</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <strong>Students with Outstanding Balances</strong>
+                    <span class="badge bg-danger ms-2">@Model.Count</span>
+                </div>
+                @if (!Model.Any())
+                {
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <h5 class="text-success">All Fees Cleared!</h5>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered mb-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Adm No.</th>
+                                    <th>Student Name</th>
+                                    <th>Class</th>
+                                    <th>Term</th>
+                                    <th class="text-end">Invoiced</th>
+                                    <th class="text-end">Paid</th>
+                                    <th class="text-end">Balance</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.Count; i++)
+                                {
+                                    var inv = Model[i];
+                                    <tr>
+                                        <td>@(i + 1)</td>
+                                        <td>@inv.Student.AdmissionNumber</td>
+                                        <td>
+                                            <strong>@inv.Student.FullName</strong>
+                                        </td>
+                                        <td>@(inv.Student.ClassLevel?.Name ?? "-")</td>
+                                        <td>@inv.AcademicTerm.Name</td>
+                                        <td class="text-end">
+                                            @inv.TotalAmount.ToString("N0")
+                                        </td>
+                                        <td class="text-end text-success">
+                                            @inv.TotalPaid.ToString("N0")
+                                        </td>
+                                        <td class="text-end text-danger fw-bold">
+                                            @inv.Balance.ToString("N0")
+                                        </td>
+                                        <td>
+                                            @if (inv.Status ==
+                                                SMIS.Domain.Entities.Finance.InvoiceStatus.PartiallyPaid)
+                                            {
+                                                <span class="badge bg-warning text-dark">
+                                                    Partial
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">Unpaid</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="7" class="fw-bold text-end">
+                                        TOTAL OUTSTANDING:
+                                    </td>
+                                    <td class="text-end fw-bold text-danger">
+                                        KES @Model.Sum(i => i.Balance).ToString("N0")
+                                    </td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <div class="card-footer d-print-block text-muted small">
+                        @(school?.Name ?? "") |
+                        Generated: @DateTime.Now.ToString("dd MMM yyyy HH:mm")
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function applyFilter() {
+        const termId = document.getElementById('termSelect').value;
+        const classId = document.getElementById('classSelect').value;
+        const studentId = document.getElementById('studentSelect').value;
+        let url = '/Reports/OutstandingFees?';
+        if (termId) url += 'termId=' + termId + '&';
+        if (classId) url += 'classId=' + classId + '&';
+        if (studentId) url += 'studentId=' + studentId;
+        window.location = url;
+    }
+</script>
+}

@@ -1,0 +1,185 @@
+@model List<SMIS.Domain.Entities.Students.Student>
+@{
+    ViewData["Title"] = "Promote Students";
+    var classes = (List<SMIS.Domain.Entities.School.ClassLevel>)ViewBag.Classes;
+    var selectedClassId = ViewBag.SelectedClassId as int?;
+    var currentClass = ViewBag.CurrentClass as SMIS.Domain.Entities.School.ClassLevel;
+    var nextClass = ViewBag.NextClass as SMIS.Domain.Entities.School.ClassLevel;
+    var nextClassStreams = ViewBag.NextClassStreams as List<SMIS.Domain.Entities.School.ClassStream> ?? new();
+    var currentYear = ViewBag.CurrentYear as SMIS.Domain.Entities.School.AcademicYear;
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-level-up-alt me-2 text-primary"></i>Promote Students
+                </span>
+            </div>
+            <div class="header-right">
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="card mb-4">
+                <div class="card-body p-3">
+                    <form method="get" action="/Promotion" class="row g-2 align-items-end">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">From Class</label>
+                            <select name="classLevelId" class="form-control" onchange="this.form.submit()">
+                                <option value="">-- Select Class --</option>
+                                @foreach (var cls in classes)
+                                {
+                                    <option value="@cls.Id" selected="@(selectedClassId == cls.Id ? "selected" : null)">
+                                        @cls.Name
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        @if (currentYear != null)
+                        {
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold d-block">Academic Year Ending</label>
+                                <span class="badge bg-primary">@currentYear.Name</span>
+                            </div>
+                        }
+                    </form>
+                </div>
+            </div>
+
+            @if (selectedClassId.HasValue && currentClass != null)
+            {
+                <div class="card mb-3">
+                    <div class="card-body py-2 px-3">
+                        @if (nextClass != null)
+                        {
+                            <span class="text-muted small">
+                                <i class="fas fa-arrow-right me-1"></i>
+                                Default action: promote to <strong>@nextClass.Name</strong>
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="text-muted small">
+                                <i class="fas fa-graduation-cap me-1"></i>
+                                This is the final class — default action is <strong>Graduate</strong>
+                            </span>
+                        }
+                    </div>
+                </div>
+
+                @if (!Model.Any())
+                {
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="fas fa-user-graduate fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No active students in @currentClass.Name</h5>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <form asp-action="Process" asp-controller="Promotion" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="currentClassLevelId" value="@currentClass.Id" />
+                        <input type="hidden" name="academicYearId" value="@(currentYear?.Id ?? 0)" />
+
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="fas fa-list me-2 text-primary"></i>
+                                    Students in @currentClass.Name
+                                    <span class="badge bg-primary ms-2">@Model.Count</span>
+                                </span>
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <i class="fas fa-check me-1"></i> Process All
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Adm. No</th>
+                                            <th>Full Name</th>
+                                            <th>Current Stream</th>
+                                            <th>Action</th>
+                                            <th>Target Class</th>
+                                            <th>Target Stream</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var student in Model)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <input type="hidden" name="studentIds" value="@student.Id" />
+                                                    <span class="badge bg-light text-dark fw-bold">@student.AdmissionNumber</span>
+                                                </td>
+                                                <td><strong>@student.FullName</strong></td>
+                                                <td>@(student.ClassStream?.Name ?? "-")</td>
+                                                <td>
+                                                    <select name="actions" class="form-control form-control-sm">
+                                                        @if (nextClass != null)
+                                                        {
+                                                            <option value="promote" selected>Promote</option>
+                                                            <option value="repeat">Repeat</option>
+                                                        }
+                                                        else
+                                                        {
+                                                            <option value="graduate" selected>Graduate</option>
+                                                            <option value="repeat">Repeat</option>
+                                                        }
+                                                    </select>
+                                                </td>
+                                                <td>
+                                                    <select name="targetClassLevelIds" class="form-control form-control-sm">
+                                                        <option value="">-- N/A --</option>
+                                                        @foreach (var cls in classes)
+                                                        {
+                                                            <option value="@cls.Id" selected="@(nextClass != null && cls.Id == nextClass.Id ? "selected" : null)">
+                                                                @cls.Name
+                                                            </option>
+                                                        }
+                                                    </select>
+                                                </td>
+                                                <td>
+                                                    <select name="targetClassStreamIds" class="form-control form-control-sm">
+                                                        <option value="">-- None --</option>
+                                                        @foreach (var stream in nextClassStreams)
+                                                        {
+                                                            <option value="@stream.Id">@stream.Name</option>
+                                                        }
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </form>
+                }
+            }
+        </div>
+    </div>
+</div>

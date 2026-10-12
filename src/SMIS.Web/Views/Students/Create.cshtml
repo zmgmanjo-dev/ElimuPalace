@@ -1,0 +1,334 @@
+@model SMIS.Domain.Entities.Students.Student
+@using SMIS.Domain.Enums
+@{
+    ViewData["Title"] = "Admit Student";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-user-plus me-2 text-primary"></i>Admit New Student
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Students" class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Students
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <form asp-action="Create" asp-controller="Students"
+                  method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+
+                @* ADMISSION DETAILS *@
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-id-card me-2 text-primary"></i>
+                        Admission Details
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Admission Number</label>
+                                <input asp-for="AdmissionNumber" class="form-control"
+                                       placeholder="Auto-generated if empty" />
+                                <small class="text-muted">Leave blank for auto-generation</small>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Admission Date <span class="text-danger">*</span></label>
+                                <input asp-for="AdmissionDate" type="date"
+                                       class="form-control" required />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Class <span class="text-danger">*</span></label>
+                                <select asp-for="ClassLevelId" class="form-control"
+                                        id="classSelect" onchange="loadStreams()">
+                                    <option value="">-- Select Class --</option>
+                                    @foreach (var cls in ViewBag.Classes)
+                                    {
+                                        <option value="@cls.Id">@cls.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Stream</label>
+                                <select asp-for="ClassStreamId" class="form-control" id="streamSelect">
+                                    <option value="">-- Select Stream --</option>
+                                    @foreach (var stream in ViewBag.Streams)
+                                    {
+                                        <option value="@stream.Id"
+                                                data-class="@stream.ClassLevelId">
+                                            @stream.FullName
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* PERSONAL DETAILS *@
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-user me-2 text-primary"></i>
+                        Personal Details
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">First Name <span class="text-danger">*</span></label>
+                                <input asp-for="FirstName" class="form-control"
+                                       placeholder="e.g. John" required />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Middle Name</label>
+                                <input asp-for="MiddleName" class="form-control"
+                                       placeholder="e.g. Kamau" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                                <input asp-for="LastName" class="form-control"
+                                       placeholder="e.g. Wanjiku" required />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Gender <span class="text-danger">*</span></label>
+                                <select asp-for="Gender" class="form-control"
+                                        asp-items="Html.GetEnumSelectList<Gender>()">
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                                <input asp-for="DateOfBirth" type="date"
+                                       class="form-control" required />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Birth Certificate No.</label>
+                                <input asp-for="BirthCertificateNumber" class="form-control"
+                                       placeholder="e.g. 12345678" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Nationality</label>
+                                <input asp-for="Nationality" class="form-control"
+                                       value="Kenyan" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Religion</label>
+                                <select asp-for="Religion" class="form-control">
+                                    <option value="">-- Select --</option>
+                                    <option>Christianity</option>
+                                    <option>Islam</option>
+                                    <option>Hinduism</option>
+                                    <option>Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">County</label>
+                                <input asp-for="County" class="form-control"
+                                       placeholder="e.g. Nyamira" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Sub County</label>
+                                <input asp-for="SubCounty" class="form-control"
+                                       placeholder="e.g. Manga" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Phone Number</label>
+                                <input asp-for="PhoneNumber" class="form-control"
+                                       placeholder="e.g. 0712345678" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Student Photo</label>
+                                <input type="file" name="photoFile" class="form-control"
+                                       accept="image/*" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* PARENT / GUARDIAN *@
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-users me-2 text-success"></i>
+                        Parent / Guardian Information
+                    </div>
+                    <div class="card-body p-4">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-male me-2"></i>Father's Details
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label">Father's Name</label>
+                                <input asp-for="FatherName" class="form-control"
+                                       placeholder="e.g. Mr. John Bosire" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Father's Phone</label>
+                                <input asp-for="FatherPhone" class="form-control"
+                                       placeholder="e.g. 0712345678" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Father's Occupation</label>
+                                <input asp-for="FatherOccupation" class="form-control"
+                                       placeholder="e.g. Farmer" />
+                            </div>
+                        </div>
+
+                        <h6 class="text-danger mb-3">
+                            <i class="fas fa-female me-2"></i>Mother's Details
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label">Mother's Name</label>
+                                <input asp-for="MotherName" class="form-control"
+                                       placeholder="e.g. Mrs. Jane Bosire" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Mother's Phone</label>
+                                <input asp-for="MotherPhone" class="form-control"
+                                       placeholder="e.g. 0722345678" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Mother's Occupation</label>
+                                <input asp-for="MotherOccupation" class="form-control"
+                                       placeholder="e.g. Teacher" />
+                            </div>
+                        </div>
+
+                        <h6 class="text-warning mb-3">
+                            <i class="fas fa-user-shield me-2"></i>Guardian (if different)
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Guardian's Name</label>
+                                <input asp-for="GuardianName" class="form-control"
+                                       placeholder="e.g. Mr. Peter Otieno" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Guardian's Phone</label>
+                                <input asp-for="GuardianPhone" class="form-control"
+                                       placeholder="e.g. 0733345678" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Relationship</label>
+                                <select asp-for="GuardianRelationship" class="form-control">
+                                    <option value="">-- Select --</option>
+                                    <option>Uncle</option>
+                                    <option>Aunt</option>
+                                    <option>Grandparent</option>
+                                    <option>Sibling</option>
+                                    <option>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* MEDICAL *@
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-heartbeat me-2 text-danger"></i>
+                        Medical Information
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Blood Group</label>
+                                <select asp-for="BloodGroup" class="form-control">
+                                    <option value="">-- Select --</option>
+                                    <option>A+</option>
+                                    <option>A-</option>
+                                    <option>B+</option>
+                                    <option>B-</option>
+                                    <option>AB+</option>
+                                    <option>AB-</option>
+                                    <option>O+</option>
+                                    <option>O-</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Medical Conditions</label>
+                                <input asp-for="MedicalConditions" class="form-control"
+                                       placeholder="e.g. Asthma" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Allergies</label>
+                                <input asp-for="Allergies" class="form-control"
+                                       placeholder="e.g. Peanuts" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Special Needs</label>
+                                <div class="form-check mt-2">
+                                    <input asp-for="HasSpecialNeeds"
+                                           class="form-check-input" type="checkbox"
+                                           id="specialNeedsCheck"
+                                           onchange="toggleSpecialNeeds()" />
+                                    <label class="form-check-label" for="specialNeedsCheck">
+                                        Has Special Needs
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-12" id="specialNeedsDiv" style="display:none;">
+                                <label class="form-label">Special Needs Description</label>
+                                <textarea asp-for="SpecialNeedsDescription"
+                                          class="form-control" rows="2"
+                                          placeholder="Describe the special needs..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* PREVIOUS SCHOOL *@
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-school me-2 text-warning"></i>
+                        Previous School (Transfer Students)
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Previous School Name</label>
+                                <input asp-for="PreviousSchool" class="form-control"
+                                       placeholder="e.g. Kisii Primary School" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Previous Class</label>
+                                <input asp-for="PreviousClass" class="form-control"
+                                       placeholder="e.g. Grade 3" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Reason for Leaving</label>
+                                <input asp-for="LeaveReason" class="form-control"
+                                       placeholder="e.g. Relocation" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* SAVE BUTTONS *@
+                <div class="d-flex gap-2 mb-4">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fas fa-save me-2"></i>Save & Admit Student
+                    </button>
+                    <a href="/Students" class="btn btn-outline-secondary px-4">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                </div>
+
+            </form>
+        </div>
+    </div>

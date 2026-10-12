@@ -1,0 +1,151 @@
+@{
+    ViewData["Title"] = "Student Enrollment Report";
+}
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-users me-2 text-primary"></i>
+                    Student Enrollment Report
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Reports/StudentEnrollmentPdf?download=false" target="_blank" class="btn btn-outline-primary btn-sm me-2">
+    <i class="fas fa-eye me-1"></i> Preview
+</a>
+<a href="/Reports/StudentEnrollmentPdf?download=true" class="btn btn-danger btn-sm me-2">
+    <i class="fas fa-file-pdf me-1"></i> Download
+</a>
+                <button onclick="window.print()"
+                        class="btn btn-outline-primary btn-sm me-2">
+                    <i class="fas fa-print me-1"></i> Print
+                </button>
+                <a href="/Reports" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+        <div class="content-area">
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@ViewBag.TotalStudents</div>
+                            <div class="stat-label">Total Students</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@ViewBag.ActiveStudents</div>
+                            <div class="stat-label">Active</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-male"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@ViewBag.TotalBoys</div>
+                            <div class="stat-label">Boys</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-female"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">@ViewBag.TotalGirls</div>
+                            <div class="stat-label">Girls</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <strong>Enrollment by Class</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Class</th>
+                                <th class="text-center">Total</th>
+                                <th class="text-center">Boys</th>
+                                <th class="text-center">Girls</th>
+                                <th class="text-center">Active</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (ViewBag.ByClass != null)
+                            {
+                                foreach (var c in ViewBag.ByClass)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>@(c.Class?.Name ?? "No Class")</strong>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary">@c.Total</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-info text-dark">@c.Boys</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge" style="background:#f9a8d4;color:#831843;">@c.Girls</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-success">@c.Active</span>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td class="fw-bold">TOTAL</td>
+                                <td class="text-center fw-bold">
+                                    @ViewBag.TotalStudents
+                                </td>
+                                <td class="text-center fw-bold">
+                                    @ViewBag.TotalBoys
+                                </td>
+                                <td class="text-center fw-bold">
+                                    @ViewBag.TotalGirls
+                                </td>
+                                <td class="text-center fw-bold">
+                                    @ViewBag.ActiveStudents
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

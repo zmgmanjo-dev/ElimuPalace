@@ -1,0 +1,122 @@
+@model List<SMIS.Domain.Entities.School.ClassLevel>
+@{
+    ViewData["Title"] = "Attendance";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-calendar-check me-2 text-primary"></i>
+                    Attendance
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Attendance/Report"
+                   class="btn btn-outline-primary btn-sm me-2">
+                    <i class="fas fa-chart-bar me-1"></i> Attendance Report
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @* Current Term Info *@
+            @if (ViewBag.CurrentTerm != null)
+            {
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Current Term:</strong>
+                    @ViewBag.CurrentTerm.AcademicYear.Name —
+                    @ViewBag.CurrentTerm.Name
+                    (@ViewBag.CurrentTerm.StartDate.ToString("dd MMM") —
+                    @ViewBag.CurrentTerm.EndDate.ToString("dd MMM yyyy"))
+                </div>
+            }
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-calendar-check me-2 text-primary"></i>
+                    <strong>Select Class to Take Attendance</strong>
+                </div>
+                <div class="card-body p-0">
+                    @if (!Model.Any())
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-layer-group fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Classes Found</h5>
+                            <p class="text-muted">
+                                Please set up classes first in
+                                <a href="/Setup/Classes">Classes & Streams</a>
+                            </p>
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Class</th>
+                                    <th>Streams</th>
+                                    <th>Today's Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var cls in Model)
+                                {
+                                    <tr>
+                                        <td>
+                                            <i class="fas fa-door-open text-primary me-2"></i>
+                                            <strong>@cls.Name</strong>
+                                        </td>
+                                        <td>
+                                            @if (cls.Streams.Any())
+                                            {
+                                                @foreach (var stream in cls.Streams)
+                                                {
+                                                    <a href="/Attendance/TakeAttendance?classLevelId=@cls.Id&classStreamId=@stream.Id"
+                                                       class="badge bg-info text-dark me-1"
+                                                       style="text-decoration:none;">
+                                                        @stream.Name
+                                                    </a>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">No streams</span>
+                                            }
+                                        </td>
+                                        <td class="text-muted">
+                                            @DateTime.Today.ToString("dd MMM yyyy")
+                                        </td>
+                                        <td>
+                                            <a href="/Attendance/TakeAttendance?classLevelId=@cls.Id"
+                                               class="btn btn-sm btn-primary">
+                                                <i class="fas fa-clipboard-check me-1"></i>
+                                                Take Attendance
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

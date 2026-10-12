@@ -1,0 +1,137 @@
+@model SMIS.Domain.Entities.Library.Book
+@using SMIS.Domain.Entities.Library
+@{
+    ViewData["Title"] = "Edit Book";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-edit me-2 text-primary"></i>
+                    Edit Book — @Model.Title
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Library/Books"
+                   class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <form asp-action="EditBook" asp-controller="Library"
+                  asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-book me-2 text-primary"></i>
+                        <strong>Book Information</strong>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    Title <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="Title" class="form-control"
+                                       required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Author</label>
+                                <input asp-for="Author" class="form-control" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">ISBN</label>
+                                <input asp-for="ISBN" class="form-control" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Publisher</label>
+                                <input asp-for="Publisher" class="form-control" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Year</label>
+                                <input asp-for="PublicationYear"
+                                       class="form-control" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Edition</label>
+                                <input asp-for="Edition" class="form-control" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">
+                                    Category <span class="text-danger">*</span>
+                                </label>
+                                <select asp-for="BookCategoryId"
+                                        class="form-control" required>
+                                    <option value="">-- Select Category --</option>
+                                    @foreach (var cat in ViewBag.Categories)
+                                    {
+                                        if (Model.BookCategoryId == cat.Id)
+                                        {
+                                            <option value="@cat.Id" selected>
+                                                @cat.Name
+                                            </option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@cat.Id">
+                                                @cat.Name
+                                            </option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Total Copies</label>
+                                <input asp-for="TotalCopies"
+                                       class="form-control" min="1" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Shelf Location</label>
+                                <input asp-for="ShelfLocation"
+                                       class="form-control" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Condition</label>
+                                <select asp-for="Condition" class="form-control"
+                                        asp-items="Html.GetEnumSelectList<BookCondition>()">
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Description</label>
+                                <textarea asp-for="Description"
+                                          class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                    <a href="/Library/Books"
+                       class="btn btn-outline-secondary px-4">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

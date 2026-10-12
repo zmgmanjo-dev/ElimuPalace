@@ -1,0 +1,148 @@
+@model List<SMIS.Domain.Entities.School.ClassLevel>
+@{
+    ViewData["Title"] = "CBC Academic";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-book-open me-2 text-primary"></i>
+                    CBC Academic Module
+                </span>
+            </div>
+            <div class="header-right">
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @* Current Term *@
+            @if (ViewBag.CurrentTerm != null)
+            {
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Current Term:</strong>
+                    @ViewBag.CurrentTerm.AcademicYear.Name —
+                    @ViewBag.CurrentTerm.Name
+                </div>
+            }
+
+            @* CBC Performance Scale *@
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-2 text-primary"></i>
+                    <strong>CBC Performance Scale</strong>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="p-3 rounded text-center"
+                                 style="background:#fef2f2;border:2px solid #fca5a5;">
+                                <h4 class="fw-bold text-danger mb-1">BE</h4>
+                                <p class="mb-0 small">Below Expectation</p>
+                                <small class="text-muted">Needs significant support</small>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="p-3 rounded text-center"
+                                 style="background:#fff7ed;border:2px solid #fdba74;">
+                                <h4 class="fw-bold text-warning mb-1">AE</h4>
+                                <p class="mb-0 small">Approaching Expectation</p>
+                                <small class="text-muted">Making progress</small>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="p-3 rounded text-center"
+                                 style="background:#f0fdf4;border:2px solid #86efac;">
+                                <h4 class="fw-bold text-success mb-1">ME</h4>
+                                <p class="mb-0 small">Meets Expectation</p>
+                                <small class="text-muted">At expected level</small>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="p-3 rounded text-center"
+                                 style="background:#eff6ff;border:2px solid #93c5fd;">
+                                <h4 class="fw-bold text-primary mb-1">EE</h4>
+                                <p class="mb-0 small">Exceeds Expectation</p>
+                                <small class="text-muted">Above expected level</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Classes *@
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-layer-group me-2 text-primary"></i>
+                    <strong>Select Class for Assessment</strong>
+                </div>
+                <div class="card-body p-0">
+                    @if (!Model.Any())
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-layer-group fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Classes Found</h5>
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Class</th>
+                                    <th>Level</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var cls in Model)
+                                {
+                                    <tr>
+                                        <td>
+                                            <i class="fas fa-door-open text-primary me-2"></i>
+                                            <strong>@cls.Name</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark">
+                                                @cls.Level
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-2">
+                                                <a href="/CBC/EnterAssessment?classLevelId=@cls.Id"
+                                                   class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-edit me-1"></i>
+                                                    Enter Assessment
+                                                </a>
+                                                <a href="/CBC/ClassReport?classLevelId=@cls.Id"
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-chart-bar me-1"></i>
+                                                    Class Report
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,340 @@
+@model List<SMIS.Domain.Entities.Students.Student>
+@using SMIS.Domain.Enums
+@using SMIS.Domain.Entities.Academic
+@{
+    ViewData["Title"] = "Enter Assessment";
+    var classLevel = ViewBag.ClassLevel as SMIS.Domain.Entities.School.ClassLevel;
+    var selectedTerm = ViewBag.SelectedTerm as SMIS.Domain.Entities.School.AcademicTerm;
+    var subjects = ViewBag.Subjects as List<SMIS.Domain.Entities.School.Subject>
+        ?? new List<SMIS.Domain.Entities.School.Subject>();
+    var existingAssessments = ViewBag.ExistingAssessments as List<CBCAssessment>
+        ?? new List<CBCAssessment>();
+    var selectedSubjectId = (int?)ViewBag.SelectedSubjectId;
+    var selectedSubject = subjects.FirstOrDefault(s => s.Id == selectedSubjectId);
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-edit me-2 text-primary"></i>
+                    Assessment — @classLevel?.Name
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/CBC" class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @* Term and Subject Selection *@
+            <div class="card mb-4">
+                <div class="card-body p-3">
+                    <form method="get" action="/CBC/EnterAssessment"
+                          class="row g-2 align-items-end">
+                        <input type="hidden" name="classLevelId"
+                               value="@classLevel?.Id" />
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Term</label>
+                            <select name="termId" class="form-control"
+                                    onchange="this.form.submit()">
+                                @foreach (var term in ViewBag.Terms)
+                                {
+                                    <option value="@term.Id"
+                                            selected="@(selectedTerm?.Id == term.Id ? "selected" : null)">
+                                        @term.AcademicYear.Name - @term.Name
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">
+                                Learning Area / Subject
+                            </label>
+                            <select name="subjectId" class="form-control"
+                                    onchange="this.form.submit()">
+                                @foreach (var subject in subjects)
+                                {
+                                    <option value="@subject.Id"
+                                            selected="@(selectedSubjectId == subject.Id ? "selected" : null)">
+                                        @subject.Name
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Class</label>
+                            <input class="form-control" value="@classLevel?.Name"
+                                   readonly style="background:#f9fafb;" />
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Students Found</h5>
+                        <p class="text-muted">No active students in this class.</p>
+                    </div>
+                </div>
+            }
+            else if (selectedSubjectId == null)
+            {
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Please select a subject to enter assessments.
+                </div>
+            }
+            else
+            {
+                <form asp-action="SaveAssessment" asp-controller="CBC" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="classLevelId" value="@classLevel?.Id" />
+                    <input type="hidden" name="subjectId" value="@selectedSubjectId" />
+                    <input type="hidden" name="academicTermId" value="@selectedTerm?.Id" />
+                    <input type="hidden" name="academicYearId"
+                           value="@selectedTerm?.AcademicYearId" />
+
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between
+                                    align-items-center">
+                            <span>
+                                <i class="fas fa-book-open me-2 text-primary"></i>
+                                <strong>@selectedSubject?.Name</strong>
+                                — @classLevel?.Name
+                                — @selectedTerm?.Name
+                            </span>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-success btn-sm"
+                                        onclick="markAll(1)">
+                                    All ME
+                                </button>
+                                <button type="button" class="btn btn-primary btn-sm"
+                                        onclick="markAll(4)">
+                                    All EE
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Adm No.</th>
+                                        <th>Student Name</th>
+                                        <th class="text-center">
+                                            <span class="text-danger">BE</span>
+                                            <small class="d-block text-muted"
+                                                   style="font-size:10px;">
+                                                Below
+                                            </small>
+                                        </th>
+                                        <th class="text-center">
+                                            <span class="text-warning">AE</span>
+                                            <small class="d-block text-muted"
+                                                   style="font-size:10px;">
+                                                Approaching
+                                            </small>
+                                        </th>
+                                        <th class="text-center">
+                                            <span class="text-success">ME</span>
+                                            <small class="d-block text-muted"
+                                                   style="font-size:10px;">
+                                                Meets
+                                            </small>
+                                        </th>
+                                        <th class="text-center">
+                                            <span class="text-primary">EE</span>
+                                            <small class="d-block text-muted"
+                                                   style="font-size:10px;">
+                                                Exceeds
+                                            </small>
+                                        </th>
+                                        <th>Score</th>
+                                        <th>Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < Model.Count; i++)
+                                    {
+                                        var student = Model[i];
+                                        var existing = existingAssessments
+                                            .FirstOrDefault(a =>
+                                                a.StudentId == student.Id &&
+                                                a.SubjectId == selectedSubjectId);
+                                        var currentLevel = existing?.PerformanceLevel
+                                            ?? PerformanceLevel.MeetExpectation;
+                                        <tr id="row_@student.Id">
+                                            <td>@(i + 1)</td>
+                                            <td>
+                                                <span class="badge bg-light text-dark">
+                                                    @student.AdmissionNumber
+                                                </span>
+                                            </td>
+                                            <td><strong>@student.FullName</strong></td>
+                                            <td style="display:none;">
+                                            <input type="hidden" name="studentIds[@i]" value="@student.Id" />
+                                            </td>
+
+                                            @* BE *@
+<td class="text-center">
+    <input type="radio"
+           name="performanceLevels[@i]"
+           value="1"
+           class="form-check-input perf-radio"
+           data-student="@student.Id"
+           data-level="1"
+           @(currentLevel == PerformanceLevel.BelowExpectation ? "checked" : "")
+           onchange="updateRow(@student.Id, 1)" />
+</td>
+
+@* AE *@
+<td class="text-center">
+    <input type="radio"
+           name="performanceLevels[@i]"
+           value="2"
+           class="form-check-input perf-radio"
+           data-student="@student.Id"
+           data-level="2"
+           @(currentLevel == PerformanceLevel.ApproachingExpectation ? "checked" : "")
+           onchange="updateRow(@student.Id, 2)" />
+</td>
+
+@* ME *@
+<td class="text-center">
+    <input type="radio"
+           name="performanceLevels[@i]"
+           value="3"
+           class="form-check-input perf-radio"
+           data-student="@student.Id"
+           data-level="3"
+           @(currentLevel == PerformanceLevel.MeetExpectation ? "checked" : "")
+           onchange="updateRow(@student.Id, 3)" />
+</td>
+
+@* EE *@
+<td class="text-center">
+    <input type="radio"
+           name="performanceLevels[@i]"
+           value="4"
+           class="form-check-input perf-radio"
+           data-student="@student.Id"
+           data-level="4"
+           @(currentLevel == PerformanceLevel.ExceedsExpectation ? "checked" : "")
+           onchange="updateRow(@student.Id, 4)" />
+</td>
+
+                                            @* Score *@
+                                            <td>
+    <input type="number"
+           name="scores[@i]"
+           class="form-control form-control-sm"
+           style="width:70px;"
+           placeholder="0-100"
+           min="0" max="100"
+           value="@(existing?.Score?.ToString() ?? "")" />
+</td>
+
+                                            @* Remarks *@
+                                            <td>
+    <input type="text"
+           name="teacherRemarks[@i]"
+           class="form-control form-control-sm"
+           placeholder="Optional remarks"
+           value="@(existing?.TeacherRemarks ?? "")" />
+</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="card-footer d-flex justify-content-between
+                                    align-items-center">
+                            <div class="small">
+                                <span class="text-danger fw-bold" id="beCount">0</span> BE &nbsp;|&nbsp;
+                                <span class="text-warning fw-bold" id="aeCount">0</span> AE &nbsp;|&nbsp;
+                                <span class="text-success fw-bold" id="meCount">0</span> ME &nbsp;|&nbsp;
+                                <span class="text-primary fw-bold" id="eeCount">0</span> EE
+                            </div>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i>Save Assessment
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function updateRow(studentId, level) {
+        const row = document.getElementById('row_' + studentId);
+        row.classList.remove('table-danger', 'table-warning',
+            'table-success', 'table-primary');
+        if (level == 1) row.classList.add('table-danger');
+        else if (level == 2) row.classList.add('table-warning');
+        else if (level == 3) row.classList.add('table-success');
+        else if (level == 4) row.style.background = '#eff6ff';
+        updateCounts();
+    }
+
+    function markAll(level) {
+        document.querySelectorAll('.perf-radio').forEach(radio => {
+            if (radio.dataset.level == level) {
+                radio.checked = true;
+                updateRow(radio.dataset.student, level);
+            }
+        });
+        updateCounts();
+    }
+
+    function updateCounts() {
+        let be = 0, ae = 0, me = 0, ee = 0;
+        document.querySelectorAll('.perf-radio:checked').forEach(radio => {
+            if (radio.value == 1) be++;
+            else if (radio.value == 2) ae++;
+            else if (radio.value == 3) me++;
+            else if (radio.value == 4) ee++;
+        });
+        document.getElementById('beCount').textContent = be;
+        document.getElementById('aeCount').textContent = ae;
+        document.getElementById('meCount').textContent = me;
+        document.getElementById('eeCount').textContent = ee;
+    }
+
+    // Initialize
+    document.querySelectorAll('.perf-radio:checked').forEach(radio => {
+        updateRow(radio.dataset.student, radio.dataset.level);
+    });
+    updateCounts();
+</script>
+}

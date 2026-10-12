@@ -1,0 +1,36 @@
+@model List<SMIS.Domain.Entities.Communication.Newsletter>
+@{
+    Layout = "_PortalLayout";
+    ViewData["Title"] = "Newsletter";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-bold mb-0"><i class="fas fa-bullhorn me-2 text-primary"></i>School Updates</h4>
+    <a href="/Portal/Dashboard" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+    </a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <p class="text-muted mb-0">No updates published yet.</p>
+        </div>
+    </div>
+}
+else
+{
+    @foreach (var n in Model)
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="fw-bold">@n.Title</h5>
+                <p class="text-muted small mb-3">
+                    @n.PublishedAt?.ToString("dd MMM yyyy")
+                </p>
+                <p class="mb-0">@n.Content</p>
+            </div>
+        </div>
+    }
+}

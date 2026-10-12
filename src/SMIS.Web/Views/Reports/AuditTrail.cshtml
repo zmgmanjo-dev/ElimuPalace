@@ -1,0 +1,178 @@
+@model List<SMIS.Domain.Entities.Security.AuditLog>
+@{
+    ViewData["Title"] = "Audit Trail";
+}
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-history me-2 text-primary"></i>
+                    Audit Trail
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Reports/AuditTrailPdf?fromDate=@((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd")&toDate=@((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd")&userEmail=@ViewBag.UserEmail&module=@ViewBag.Module&download=false" target="_blank" class="btn btn-outline-primary btn-sm me-2">
+    <i class="fas fa-eye me-1"></i> Preview
+</a>
+<a href="/Reports/AuditTrailPdf?fromDate=@((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd")&toDate=@((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd")&userEmail=@ViewBag.UserEmail&module=@ViewBag.Module&download=true" class="btn btn-danger btn-sm me-2">
+    <i class="fas fa-file-pdf me-1"></i> Download
+</a>
+                <button onclick="window.print()"
+                        class="btn btn-outline-primary btn-sm me-2">
+                    <i class="fas fa-print me-1"></i> Print
+                </button>
+                <a href="/Reports" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+        <div class="content-area">
+            <div class="card mb-4">
+                <div class="card-body p-3">
+                    <div class="row g-2">
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold">From</label>
+                            <input type="date" id="fromDate"
+                                   class="form-control"
+                                   value="@((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold">To</label>
+                            <input type="date" id="toDate"
+                                   class="form-control"
+                                   value="@((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">User Email</label>
+                            <input type="text" id="userEmail"
+                                   class="form-control"
+                                   placeholder="Search by email"
+                                   value="@ViewBag.UserEmail" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Module</label>
+                            <select id="moduleSelect" class="form-control">
+                                <option value="">All Modules</option>
+                                @foreach (var m in ViewBag.Modules)
+                                {
+                                    if (ViewBag.Module == m)
+                                    {
+                                        <option value="@m" selected>@m</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@m">@m</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary w-100"
+                                    onclick="applyFilter()">
+                                <i class="fas fa-search me-1"></i> Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <strong>System Activity Log</strong>
+                    <span class="badge bg-primary ms-2">@Model.Count records</span>
+                </div>
+                @if (!Model.Any())
+                {
+                    <div class="card-body text-center py-4">
+                        <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Audit Records Found</h5>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0"
+                               style="font-size:13px;">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>User</th>
+                                    <th>Module</th>
+                                    <th>Action</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var log in Model)
+                                {
+                                    <tr>
+                                        <td class="text-muted small">
+                                            @log.Timestamp.ToString("dd MMM yyyy HH:mm")
+                                        </td>
+                                        <td>
+                                            <i class="fas fa-user text-primary me-1"></i>
+                                            @log.UserEmail
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark">
+                                                @log.Module
+                                            </span>
+                                        </td>
+                                        <td><strong>@log.Action</strong></td>
+                                        <td class="text-muted small">
+                                            @(log.Description ?? "-")
+                                        </td>
+                                        <td>
+                                            @if (log.IsSuccess)
+                                            {
+                                                <span class="badge bg-success">
+                                                    Success
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">
+                                                    Failed
+                                                </span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function applyFilter() {
+        const from = document.getElementById('fromDate').value;
+        const to = document.getElementById('toDate').value;
+        const email = document.getElementById('userEmail').value;
+        const module = document.getElementById('moduleSelect').value;
+        let url = '/Reports/AuditTrail?fromDate=' + from +
+            '&toDate=' + to;
+        if (email) url += '&userEmail=' + email;
+        if (module) url += '&module=' + module;
+        window.location = url;
+    }
+</script>
+}

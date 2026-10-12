@@ -1,0 +1,20 @@
+@{
+    var children = ViewBag.Children as List<SMIS.Domain.Entities.Students.Student>;
+    var currentId = (int)(ViewBag.SelectedStudent?.Id ?? ViewBag.Student?.Id ?? 0);
+}
+@if (children != null && children.Count > 1)
+{
+    <div class="mb-4">
+        <label class="form-label small fw-bold text-muted">Viewing:</label>
+        <select class="form-select" style="max-width:400px;"
+                onchange="window.location = this.value">
+            @foreach (var c in children)
+            {
+                var url = $"{Context.Request.Path}?studentId={c.Id}";
+                <option value="@url" selected="@(c.Id == currentId ? "selected" : null)">
+                    @c.FullName (@(c.ClassLevel?.Name ?? "-"))
+                </option>
+            }
+        </select>
+    </div>
+}

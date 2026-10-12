@@ -1,0 +1,102 @@
+@model List<SMIS.Domain.Entities.Communication.Newsletter>
+@{
+    ViewData["Title"] = "Newsletter";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-bullhorn me-2 text-primary"></i>
+                    Newsletter
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Newsletter/Create" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i> New Post
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (!Model.Any())
+            {
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-bullhorn fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Posts Yet</h5>
+                        <a href="/Newsletter/Create" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i> Write First Post
+                        </a>
+                    </div>
+                </div>
+            }
+            else
+            {
+                @foreach (var n in Model)
+                {
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="fw-bold mb-0">@n.Title</h5>
+                                @if (n.IsPublished)
+                                {
+                                    <span class="badge bg-success">Published</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Draft</span>
+                                }
+                            </div>
+                            <p class="text-muted small mb-3">
+                                @(n.IsPublished
+                                    ? $"Published {n.PublishedAt?.ToString("dd MMM yyyy")} by {n.PublishedBy}"
+                                    : $"Created {n.CreatedAt:dd MMM yyyy}")
+                            </p>
+                            <p>@n.Content</p>
+                            <div class="d-flex gap-2">
+                                @if (!n.IsPublished)
+                                {
+                                    <form asp-action="Publish" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@n.Id" />
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="fas fa-paper-plane me-1"></i>Publish
+                                        </button>
+                                    </form>
+                                }
+                                <form asp-action="Delete" method="post"
+                                      onsubmit="return confirm('Delete this post?')">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@n.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash me-1"></i>Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>

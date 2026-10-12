@@ -1,0 +1,175 @@
+@model List<SMIS.Domain.Entities.Finance.FeePayment>
+@{
+    ViewData["Title"] = "Daily Collection Report";
+    var reportDate = (DateTime)ViewBag.ReportDate;
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-calendar-day me-2 text-primary"></i>
+                    Daily Collection — @reportDate.ToString("dd MMM yyyy")
+                </span>
+            </div>
+            <div class="header-right">
+                <button onclick="window.print()"
+                        class="btn btn-outline-primary btn-sm me-2">
+                    <i class="fas fa-print me-1"></i> Print
+                </button>
+                <a href="/Reports" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+        <div class="content-area">
+            <div class="card mb-4">
+                <div class="card-body p-3">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Date</label>
+                            <input type="date" id="dateInput"
+                                   class="form-control"
+                                   value="@reportDate.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100"
+                                    onclick="window.location='/Reports/DailyCollection?date='+document.getElementById('dateInput').value">
+                                <i class="fas fa-search me-1"></i> View
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-sm-3">
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.TotalCollected).ToString("N0"))
+                            </div>
+                            <div class="stat-label">Total Today</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.CashTotal).ToString("N0"))
+                            </div>
+                            <div class="stat-label">Cash</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.MpesaTotal).ToString("N0"))
+                            </div>
+                            <div class="stat-label">M-Pesa</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-university"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value">
+                                KES @(((decimal)ViewBag.BankTotal).ToString("N0"))
+                            </div>
+                            <div class="stat-label">Bank</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <strong>Payments on @reportDate.ToString("dd MMM yyyy")</strong>
+                    <span class="badge bg-primary ms-2">@Model.Count</span>
+                </div>
+                @if (!Model.Any())
+                {
+                    <div class="card-body text-center py-4">
+                        <p class="text-muted">No payments recorded for this date.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Receipt No.</th>
+                                    <th>Student</th>
+                                    <th>Class</th>
+                                    <th>Method</th>
+                                    <th>Reference</th>
+                                    <th class="text-end">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in Model)
+                                {
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-success">
+                                                @p.ReceiptNumber
+                                            </span>
+                                        </td>
+                                        <td><strong>@p.Student.FullName</strong></td>
+                                        <td>@(p.Student.ClassLevel?.Name ?? "-")</td>
+                                        <td>@p.PaymentMethod</td>
+                                        <td class="text-muted">
+                                            @(p.ReferenceNumber ?? "-")
+                                        </td>
+                                        <td class="text-end fw-bold text-success">
+                                            KES @p.Amount.ToString("N0")
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="5" class="fw-bold text-end">
+                                        Total:
+                                    </td>
+                                    <td class="text-end fw-bold text-success">
+                                        KES @Model.Sum(p => p.Amount).ToString("N0")
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

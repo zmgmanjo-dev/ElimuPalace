@@ -1,0 +1,207 @@
+@model List<SMIS.Domain.Entities.Accounting.JournalEntry>
+@using SMIS.Domain.Entities.Accounting
+@{
+    ViewData["Title"] = "Journal Entries";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-book me-2 text-primary"></i>
+                    Journal Entries
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Accounting/CreateJournalEntry"
+                   class="btn btn-primary btn-sm me-2">
+                    <i class="fas fa-plus me-1"></i> New Entry
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show mb-4">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @* Filters *@
+            <div class="card mb-4">
+                <div class="card-body p-3">
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">From</label>
+                            <input type="date" id="fromDate"
+                                   class="form-control"
+                                   value="@((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">To</label>
+                            <input type="date" id="toDate"
+                                   class="form-control"
+                                   value="@((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Status</label>
+                            <select id="statusSelect" class="form-control">
+                                <option value="">All</option>
+                                @if (ViewBag.Status == "Draft")
+                                {
+                                    <option value="Draft" selected>Draft</option>
+                                }
+                                else
+                                {
+                                    <option value="Draft">Draft</option>
+                                }
+                                @if (ViewBag.Status == "Posted")
+                                {
+                                    <option value="Posted" selected>Posted</option>
+                                }
+                                else
+                                {
+                                    <option value="Posted">Posted</option>
+                                }
+                                @if (ViewBag.Status == "Reversed")
+                                {
+                                    <option value="Reversed" selected>Reversed</option>
+                                }
+                                else
+                                {
+                                    <option value="Reversed">Reversed</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-primary w-100"
+                                    onclick="applyFilter()">
+                                <i class="fas fa-search me-1"></i> Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <strong>Journal Entries</strong>
+                    <span class="badge bg-primary ms-2">@Model.Count</span>
+                </div>
+                @if (!Model.Any())
+                {
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-book fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Journal Entries</h5>
+                        <a href="/Accounting/CreateJournalEntry"
+                           class="btn btn-primary">
+                            Create First Entry
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Entry No.</th>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Type</th>
+                                    <th>Lines</th>
+                                    <th class="text-end">Debit</th>
+                                    <th class="text-end">Credit</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var entry in Model)
+                                {
+                                    var totalDebits =
+                                        entry.Lines.Sum(l => l.DebitAmount);
+                                    var totalCredits =
+                                        entry.Lines.Sum(l => l.CreditAmount);
+                                    <tr>
+                                        <td>
+                                            <strong>@entry.EntryNumber</strong>
+                                        </td>
+                                        <td>
+                                            @entry.EntryDate.ToString("dd MMM yyyy")
+                                        </td>
+                                        <td>@entry.Description</td>
+                                        <td>
+                                            <span class="badge bg-light text-dark">
+                                                @entry.EntryType
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            @entry.Lines.Count
+                                        </td>
+                                        <td class="text-end">
+                                            KES @totalDebits.ToString("N0")
+                                        </td>
+                                        <td class="text-end">
+                                            KES @totalCredits.ToString("N0")
+                                        </td>
+                                        <td>
+                                            @switch (entry.Status)
+                                            {
+                                                case JournalEntryStatus.Posted:
+                                                    <span class="badge bg-success">Posted</span>
+                                                    break;
+                                                case JournalEntryStatus.Draft:
+                                                    <span class="badge bg-warning text-dark">Draft</span>
+                                                    break;
+                                                case JournalEntryStatus.Reversed:
+                                                    <span class="badge bg-secondary">Reversed</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td>
+                                            <a href="/Accounting/JournalEntryDetails/@entry.Id"
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function applyFilter() {
+        const from = document.getElementById('fromDate').value;
+        const to = document.getElementById('toDate').value;
+        const status = document.getElementById('statusSelect').value;
+        let url = '/Accounting/JournalEntries?fromDate=' + from +
+            '&toDate=' + to;
+        if (status) url += '&status=' + status;
+        window.location = url;
+    }
+</script>
+}

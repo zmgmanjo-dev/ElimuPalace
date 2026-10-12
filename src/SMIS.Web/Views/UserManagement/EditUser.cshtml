@@ -1,0 +1,133 @@
+@model Microsoft.AspNetCore.Identity.IdentityUser
+@{
+    ViewData["Title"] = "Edit User";
+    var userRoles = ViewBag.UserRoles as IList<string>
+        ?? new List<string>();
+    var allRoles = ViewBag.AllRoles as
+        List<Microsoft.AspNetCore.Identity.IdentityRole>
+        ?? new List<Microsoft.AspNetCore.Identity.IdentityRole>();
+    var isActive = !Model.LockoutEnd.HasValue ||
+        Model.LockoutEnd < DateTimeOffset.Now;
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-user-edit me-2 text-primary"></i>
+                    Edit User — @Model.Email
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/UserManagement"
+                   class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-user-edit me-2 text-primary"></i>
+                    <strong>Edit User Details</strong>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="UpdateUser"
+                          asp-controller="UserManagement" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Full Name</label>
+                                <input type="text" name="fullName"
+                                       class="form-control"
+                                       value="@ViewBag.FullName" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">
+                                    Email Address
+                                </label>
+                                <input type="email" class="form-control"
+                                       value="@Model.Email" readonly
+                                       style="background:#f9fafb;" />
+                                <small class="text-muted">
+                                    Email cannot be changed
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">
+                                    Phone Number
+                                </label>
+                                <input type="text" name="phone"
+                                       class="form-control"
+                                       value="@Model.PhoneNumber" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Role</label>
+                                <select name="role" class="form-control" required>
+                                    <option value="">-- Select Role --</option>
+                                    @foreach (var role in allRoles)
+                                    {
+                                        if (userRoles.Contains(role.Name!))
+                                        {
+                                            <option value="@role.Name" selected>
+                                                @role.Name
+                                            </option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@role.Name">
+                                                @role.Name
+                                            </option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">
+                                    Account Status
+                                </label>
+                                <div class="form-check mt-2">
+                                    <input type="checkbox" name="isActive"
+                                           value="true"
+                                           class="form-check-input"
+                                           id="isActiveCheck"
+                                           @(isActive ? "checked" : "") />
+                                    <label class="form-check-label"
+                                           for="isActiveCheck">
+                                        Account is Active
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                            <a href="/UserManagement"
+                               class="btn btn-outline-secondary px-4">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

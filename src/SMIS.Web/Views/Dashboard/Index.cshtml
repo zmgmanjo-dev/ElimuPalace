@@ -1,0 +1,64 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">Dashboard</span>
+                @if (ViewBag.CurrentTerm != null)
+                {
+                    <span class="badge bg-success ms-3 small">
+                        @ViewBag.CurrentTerm.AcademicYear.Name — @ViewBag.CurrentTerm.Name
+                    </span>
+                }
+            </div>
+            <div class="header-right">
+                <button class="header-btn">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge-dot"></span>
+                </button>
+                <div class="user-avatar ms-2" title="@User.Identity?.Name">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <div class="content-area">
+            @{
+                var role = (string)(ViewBag.DashboardRole ?? "Generic");
+            }
+            @if (role == "Admin")
+            {
+                @await Html.PartialAsync("_AdminDashboard")
+            }
+            else if (role == "Teacher")
+            {
+                @await Html.PartialAsync("_TeacherDashboard")
+            }
+            else if (role == "Bursar")
+            {
+                @await Html.PartialAsync("_BursarDashboard")
+            }
+            else if (role == "Librarian")
+            {
+                @await Html.PartialAsync("_LibrarianDashboard")
+            }
+            else
+            {
+                @await Html.PartialAsync("_GenericDashboard")
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,15 @@
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\bin\Release\net9.0\SMIS.Application.deps.json
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\bin\Release\net9.0\SMIS.Application.dll
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\bin\Release\net9.0\SMIS.Application.pdb
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\bin\Release\net9.0\SMIS.Domain.dll
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\bin\Release\net9.0\SMIS.Domain.pdb
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\obj\Release\net9.0\SMIS.Application.csproj.AssemblyReference.cache
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\obj\Release\net9.0\SMIS.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\obj\Release\net9.0\SMIS.Application.AssemblyInfoInputs.cache
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\obj\Release\net9.0\SMIS.Application.AssemblyInfo.cs
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\obj\Release\net9.0\SMIS.Application.csproj.CoreCompileInputs.cache
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\obj\Release\net9.0\SMIS.App.6964B846.Up2Date
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\obj\Release\net9.0\SMIS.Application.dll
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\obj\Release\net9.0\refint\SMIS.Application.dll
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\obj\Release\net9.0\SMIS.Application.pdb
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\obj\Release\net9.0\ref\SMIS.Application.dll

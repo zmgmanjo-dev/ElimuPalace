@@ -1,0 +1,141 @@
+@using SMIS.Domain.Entities.Library
+@{
+    ViewData["Title"] = "Add Book";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-plus-circle me-2 text-primary"></i>
+                    Add New Book
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Library/Books"
+                   class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Books
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <form asp-action="AddBook" asp-controller="Library" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-book me-2 text-primary"></i>
+                        <strong>Book Information</strong>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    Title <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" name="Title"
+                                       class="form-control"
+                                       placeholder="e.g. Mathematics Grade 7"
+                                       required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Author</label>
+                                <input type="text" name="Author"
+                                       class="form-control"
+                                       placeholder="e.g. John Mwangi" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">ISBN</label>
+                                <input type="text" name="ISBN"
+                                       class="form-control"
+                                       placeholder="e.g. 978-9966-123-45-6" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Publisher</label>
+                                <input type="text" name="Publisher"
+                                       class="form-control"
+                                       placeholder="e.g. Kenya Literature Bureau" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Year</label>
+                                <input type="number" name="PublicationYear"
+                                       class="form-control"
+                                       placeholder="e.g. 2023"
+                                       min="1900" max="2099" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Edition</label>
+                                <input type="text" name="Edition"
+                                       class="form-control"
+                                       placeholder="e.g. 3rd" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">
+                                    Category <span class="text-danger">*</span>
+                                </label>
+                                <select name="BookCategoryId" class="form-control"
+                                        required>
+                                    <option value="">-- Select Category --</option>
+                                    @foreach (var cat in ViewBag.Categories)
+                                    {
+                                        <option value="@cat.Id">@cat.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">
+                                    Total Copies <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" name="TotalCopies"
+                                       class="form-control"
+                                       value="1" min="1" required />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Shelf Location</label>
+                                <input type="text" name="ShelfLocation"
+                                       class="form-control"
+                                       placeholder="e.g. A1-S3" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Condition</label>
+                                <select name="Condition" class="form-control"
+                                        asp-items="Html.GetEnumSelectList<BookCondition>()">
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Description</label>
+                                <textarea name="Description" class="form-control"
+                                          rows="2"
+                                          placeholder="Brief description of the book"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fas fa-save me-2"></i>Save Book
+                    </button>
+                    <a href="/Library/Books"
+                       class="btn btn-outline-secondary px-4">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

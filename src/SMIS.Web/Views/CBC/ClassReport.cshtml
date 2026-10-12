@@ -1,0 +1,231 @@
+@model List<SMIS.Domain.Entities.Students.Student>
+@using SMIS.Domain.Enums
+@using SMIS.Domain.Entities.Academic
+@{
+    ViewData["Title"] = "Class Report";
+    var classLevel = ViewBag.ClassLevel as SMIS.Domain.Entities.School.ClassLevel;
+    var selectedTerm = ViewBag.SelectedTerm as SMIS.Domain.Entities.School.AcademicTerm;
+    var subjects = ViewBag.Subjects as List<SMIS.Domain.Entities.School.Subject>
+        ?? new List<SMIS.Domain.Entities.School.Subject>();
+    var assessments = ViewBag.Assessments as List<CBCAssessment>
+        ?? new List<CBCAssessment>();
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-chart-bar me-2 text-primary"></i>
+                    Class Report — @classLevel?.Name
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/CBC/DownloadBulkReportCards?classLevelId=@classLevel?.Id&termId=@selectedTerm?.Id"
+                   class="btn btn-success btn-sm me-2" target="_blank">
+                    <i class="fas fa-download me-1"></i> Download All Report Cards
+                </a>
+                <button onclick="window.print()" class="btn btn-outline-primary btn-sm me-2">
+                    <i class="fas fa-print me-1"></i> Print
+                </button>
+                <a href="/CBC" class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="card mb-4">
+                <div class="card-body p-3">
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Class</label>
+                            <select class="form-control"
+                                    onchange="window.location='/CBC/ClassReport?classLevelId='+this.value+'&termId=@selectedTerm?.Id'">
+                                @foreach (var cls in ViewBag.Classes)
+                                {
+                                    <option value="@cls.Id"
+                                            selected="@(classLevel?.Id == cls.Id ? "selected" : null)">
+                                        @cls.Name
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Term</label>
+                            <select class="form-control"
+                                    onchange="window.location='/CBC/ClassReport?classLevelId=@classLevel?.Id&termId='+this.value">
+                                @foreach (var term in ViewBag.Terms)
+                                {
+                                    <option value="@term.Id"
+                                            selected="@(selectedTerm?.Id == term.Id ? "selected" : null)">
+                                        @term.AcademicYear.Name - @term.Name
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Students Found</h5>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="stat-card">
+                            <div class="stat-icon blue">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div>
+                                <div class="stat-value">@Model.Count</div>
+                                <div class="stat-label">Total Students</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="stat-card">
+                            <div class="stat-icon green">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div>
+                                <div class="stat-value">
+                                    @assessments.Count(a =>
+                                        a.PerformanceLevel == PerformanceLevel.ExceedsExpectation ||
+                                        a.PerformanceLevel == PerformanceLevel.MeetExpectation)
+                                </div>
+                                <div class="stat-label">ME & EE Count</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="stat-card">
+                            <div class="stat-icon orange">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <div>
+                                <div class="stat-value">
+                                    @assessments.Count(a =>
+                                        a.PerformanceLevel == PerformanceLevel.BelowExpectation)
+                                </div>
+                                <div class="stat-label">BE Count</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="stat-card">
+                            <div class="stat-icon purple">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div>
+                                <div class="stat-value">@subjects.Count</div>
+                                <div class="stat-label">Subjects</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-table me-2 text-primary"></i>
+                        <strong>@classLevel?.Name Assessment Summary</strong>
+                        — @selectedTerm?.AcademicYear?.Name @selectedTerm?.Name
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered mb-0" style="font-size:12px;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Student Name</th>
+                                    @foreach (var subject in subjects)
+                                    {
+                                        <th class="text-center" style="min-width:80px;">
+                                            @subject.Code
+                                        </th>
+                                    }
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var student in Model)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>@student.FullName</strong>
+                                            <small class="text-muted d-block">
+                                                @student.AdmissionNumber
+                                            </small>
+                                        </td>
+                                        @foreach (var subject in subjects)
+                                        {
+                                            var assessment = assessments.FirstOrDefault(a =>
+                                                a.StudentId == student.Id &&
+                                                a.SubjectId == subject.Id);
+                                            <td class="text-center">
+                                                @if (assessment != null)
+                                                {
+                                                    @switch (assessment.PerformanceLevel)
+                                                    {
+                                                        case PerformanceLevel.BelowExpectation:
+                                                            <span class="badge bg-danger">BE</span>
+                                                            break;
+                                                        case PerformanceLevel.ApproachingExpectation:
+                                                            <span class="badge bg-warning text-dark">AE</span>
+                                                            break;
+                                                        case PerformanceLevel.MeetExpectation:
+                                                            <span class="badge bg-success">ME</span>
+                                                            break;
+                                                        case PerformanceLevel.ExceedsExpectation:
+                                                            <span class="badge bg-primary">EE</span>
+                                                            break;
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">—</span>
+                                                }
+                                            </td>
+                                        }
+                                        <td class="text-center">
+                                            <a href="/CBC/ReportCard?studentId=@student.Id&termId=@selectedTerm?.Id"
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-file-alt"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer">
+                        <strong class="small text-muted">SUBJECT KEY:</strong>
+                        @foreach (var subject in subjects)
+                        {
+                            <span class="badge bg-light text-dark me-1 ms-1">
+                                @subject.Code = @subject.Name
+                            </span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

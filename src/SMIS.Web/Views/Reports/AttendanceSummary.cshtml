@@ -1,0 +1,209 @@
+@{
+    ViewData["Title"] = "Attendance Summary";
+    var school = ViewBag.School as SMIS.Domain.Entities.School.SchoolProfile;
+    ViewBag.ReportTitle = "Attendance Summary Report";
+}
+
+<div class="app-wrapper">
+    @await Html.PartialAsync("_Sidebar")
+        
+    <div class="main-content">
+        <header class="top-header d-print-none">
+            <div class="header-left">
+                <span class="page-title">
+                    <i class="fas fa-calendar-check me-2 text-primary"></i>
+                    Attendance Summary
+                </span>
+            </div>
+            <div class="header-right">
+                <a href="/Reports/AttendanceSummaryPdf?termId=@ViewBag.TermId&classId=@ViewBag.ClassId&studentId=@ViewBag.StudentId&download=false" target="_blank" class="btn btn-outline-primary btn-sm me-2">
+    <i class="fas fa-eye me-1"></i> Preview
+</a>
+<a href="/Reports/AttendanceSummaryPdf?termId=@ViewBag.TermId&classId=@ViewBag.ClassId&studentId=@ViewBag.StudentId&download=true" class="btn btn-danger btn-sm me-2">
+    <i class="fas fa-file-pdf me-1"></i> Download
+</a>
+                <button onclick="window.print()"
+                        class="btn btn-success btn-sm me-2">
+                    <i class="fas fa-print me-1"></i> Print
+                </button>
+                <a href="/Reports" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <div class="user-avatar ms-2">
+                    @(User.Identity?.Name?.Substring(0,1).ToUpper() ?? "A")
+                </div>
+                <form asp-action="Logout" asp-controller="Account"
+                      method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="header-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @await Html.PartialAsync("_PrintHeader")
+
+            <div class="card mb-4 d-print-none">
+                <div class="card-body p-3">
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Term</label>
+                            <select id="termSelect" class="form-control">
+                                <option value="">All Terms</option>
+                                @foreach (var term in ViewBag.Terms)
+                                {
+                                    if (ViewBag.TermId != null &&
+                                        ViewBag.TermId == term.Id)
+                                    {
+                                        <option value="@term.Id" selected>
+                                            @term.AcademicYear.Name - @term.Name
+                                        </option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@term.Id">
+                                            @term.AcademicYear.Name - @term.Name
+                                        </option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Class</label>
+                            <select id="classSelect" class="form-control">
+                                <option value="">All Classes</option>
+                                @foreach (var cls in ViewBag.Classes)
+                                {
+                                    if (ViewBag.ClassId != null &&
+                                        ViewBag.ClassId == cls.Id)
+                                    {
+                                        <option value="@cls.Id" selected>
+                                            @cls.Name
+                                        </option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@cls.Id">@cls.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">
+                                Student (optional)
+                            </label>
+                            <select id="studentSelect" class="form-control">
+                                <option value="">All Students</option>
+                                @foreach (var s in ViewBag.Students)
+                                {
+                                    if (ViewBag.StudentId != null &&
+                                        ViewBag.StudentId == s.Id)
+                                    {
+                                        <option value="@s.Id" selected>
+                                            @s.AdmissionNumber — @s.FullName
+                                        </option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@s.Id">
+                                            @s.AdmissionNumber — @s.FullName
+                                        </option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-primary w-100"
+                                    onclick="applyFilter()">
+                                <i class="fas fa-search me-1"></i> Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <strong>Student Attendance Summary</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Adm No.</th>
+                                <th>Student Name</th>
+                                <th>Class</th>
+                                <th class="text-center text-success">Present</th>
+                                <th class="text-center text-danger">Absent</th>
+                                <th class="text-center text-warning">Late</th>
+                                <th class="text-center text-info">Excused</th>
+                                <th class="text-center">Total</th>
+                                <th class="text-center">Rate %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (ViewBag.StudentSummary != null)
+                            {
+                                int idx = 1;
+                                foreach (var s in ViewBag.StudentSummary)
+                                {
+                                    var rate = s.Total > 0
+                                        ? Math.Round(
+                                            (double)s.Present / s.Total * 100, 1)
+                                        : 0;
+                                    <tr>
+                                        <td>@idx</td>
+                                        <td>@s.Student.AdmissionNumber</td>
+                                        <td><strong>@s.Student.FullName</strong></td>
+                                        <td>@(s.Student.ClassLevel?.Name ?? "-")</td>
+                                        <td class="text-center text-success fw-bold">
+                                            @s.Present
+                                        </td>
+                                        <td class="text-center text-danger fw-bold">
+                                            @s.Absent
+                                        </td>
+                                        <td class="text-center text-warning fw-bold">
+                                            @s.Late
+                                        </td>
+                                        <td class="text-center text-info fw-bold">
+                                            @s.Excused
+                                        </td>
+                                        <td class="text-center">@s.Total</td>
+                                        <td class="text-center">
+                                            <span class="badge @(rate >= 80 ? "bg-success" : rate >= 60 ? "bg-warning text-dark" : "bg-danger")">
+                                                @rate%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    idx++;
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer d-print-block text-muted small">
+                    @(school?.Name ?? "") |
+                    Generated: @DateTime.Now.ToString("dd MMM yyyy HH:mm")
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function applyFilter() {
+        const termId = document.getElementById('termSelect').value;
+        const classId = document.getElementById('classSelect').value;
+        const studentId = document.getElementById('studentSelect').value;
+        let url = '/Reports/AttendanceSummary?';
+        if (termId) url += 'termId=' + termId + '&';
+        if (classId) url += 'classId=' + classId + '&';
+        if (studentId) url += 'studentId=' + studentId;
+        window.location = url;
+    }
+</script>
+}
