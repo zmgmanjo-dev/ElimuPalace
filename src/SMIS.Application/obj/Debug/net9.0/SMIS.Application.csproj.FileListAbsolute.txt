@@ -28,3 +28,4 @@ C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\obj\Debug\net9.0\SMIS.A
 C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\obj\Debug\net9.0\refint\SMIS.Application.dll
 C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\obj\Debug\net9.0\SMIS.Application.pdb
 C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\obj\Debug\net9.0\ref\SMIS.Application.dll
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Application\obj\Debug\net9.0\SMIS.Application.sourcelink.json

@@ -20,3 +20,4 @@ C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Domain\obj\Debug\net9.0\SMIS.Domain
 C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Domain\obj\Debug\net9.0\refint\SMIS.Domain.dll
 C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Domain\obj\Debug\net9.0\SMIS.Domain.pdb
 C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Domain\obj\Debug\net9.0\ref\SMIS.Domain.dll
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Domain\obj\Debug\net9.0\SMIS.Domain.sourcelink.json

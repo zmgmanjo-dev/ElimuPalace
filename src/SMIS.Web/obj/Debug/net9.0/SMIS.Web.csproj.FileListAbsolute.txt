@@ -627,3 +627,4 @@ C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Web\obj\Debug\net9.0\compressed\15q
 C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Web\bin\Debug\net9.0\BouncyCastle.Cryptography.dll
 C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Web\bin\Debug\net9.0\MailKit.dll
 C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Web\bin\Debug\net9.0\MimeKit.dll
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Web\obj\Debug\net9.0\SMIS.Web.sourcelink.json

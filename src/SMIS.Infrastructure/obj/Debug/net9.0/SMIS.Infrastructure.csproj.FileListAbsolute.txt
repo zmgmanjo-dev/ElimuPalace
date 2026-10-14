@@ -36,3 +36,4 @@ C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Infrastructure\obj\Debug\net9.0\ref
 C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Infrastructure\obj\Debug\net9.0\SMIS.Infrastructure.pdb
 C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Infrastructure\obj\Debug\net9.0\SMIS.Infrastructure.genruntimeconfig.cache
 C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Infrastructure\obj\Debug\net9.0\ref\SMIS.Infrastructure.dll
+C:\Users\zack\Documents\ELIMUPALACE\src\SMIS.Infrastructure\obj\Debug\net9.0\SMIS.Infrastructure.sourcelink.json

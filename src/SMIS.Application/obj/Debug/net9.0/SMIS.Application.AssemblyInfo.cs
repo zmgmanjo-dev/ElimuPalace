@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SMIS.Application")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b306365a7048b50fa56af396114646f59ea20746")]
 [assembly: System.Reflection.AssemblyProductAttribute("SMIS.Application")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SMIS.Application")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

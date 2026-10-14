@@ -9,6 +9,7 @@ namespace SMIS.Web.Services;
 public class TenantProvisioningService
 {
     private readonly IConfiguration _config;
+    private readonly GlobalUserDirectoryService _directory;
 
     private static readonly string[] Roles = {
         "Administrator", "Principal", "DeputyPrincipal",
@@ -18,9 +19,10 @@ public class TenantProvisioningService
         "Parent", "Student", "BoardMember"
     };
 
-    public TenantProvisioningService(IConfiguration config)
+    public TenantProvisioningService(IConfiguration config, GlobalUserDirectoryService directory)
     {
         _config = config;
+        _directory = directory;
     }
 
     /// <summary>
@@ -96,5 +98,10 @@ public class TenantProvisioningService
         });
 
         await tenantDb.SaveChangesAsync();
+
+        // ── Register the new admin in the platform-wide directory ──────
+        // This is what lets the common /Login page find this school's
+        // database just from the admin's email, with no slug needed.
+        await _directory.RegisterUserAsync(reg.AdminEmail, reg.DatabaseName, reg.SchoolName, reg.Id);
     }
 }

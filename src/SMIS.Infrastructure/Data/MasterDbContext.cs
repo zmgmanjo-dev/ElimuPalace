@@ -13,6 +13,7 @@ public class MasterDbContext : DbContext
 
     public DbSet<SchoolRegistration> SchoolRegistrations => Set<SchoolRegistration>();
     public DbSet<SuperAdmin> SuperAdmins => Set<SuperAdmin>();
+    public DbSet<UserDirectoryEntry> UserDirectoryEntries => Set<UserDirectoryEntry>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -34,6 +35,20 @@ public class MasterDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Email).IsRequired().HasMaxLength(200);
             entity.HasIndex(e => e.Email).IsUnique();
+        });
+
+        builder.Entity<UserDirectoryEntry>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.NormalizedEmail).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.DatabaseName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.SchoolName).HasMaxLength(200);
+            entity.HasIndex(e => e.NormalizedEmail); // fast lookup — deliberately NOT unique
+            entity.HasOne(e => e.SchoolRegistration)
+                .WithMany()
+                .HasForeignKey(e => e.SchoolRegistrationId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

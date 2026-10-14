@@ -174,6 +174,59 @@ namespace SMIS.Infrastructure.Data.MasterMigrations
 
                     b.ToTable("SuperAdmins");
                 });
+
+            modelBuilder.Entity("SMIS.Domain.Entities.Platform.UserDirectoryEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DatabaseName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("NormalizedEmail")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("SchoolName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("SchoolRegistrationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail");
+
+                    b.HasIndex("SchoolRegistrationId");
+
+                    b.ToTable("UserDirectoryEntries");
+                });
+
+            modelBuilder.Entity("SMIS.Domain.Entities.Platform.UserDirectoryEntry", b =>
+                {
+                    b.HasOne("SMIS.Domain.Entities.Platform.SchoolRegistration", "SchoolRegistration")
+                        .WithMany()
+                        .HasForeignKey("SchoolRegistrationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("SchoolRegistration");
+                });
 #pragma warning restore 612, 618
         }
     }

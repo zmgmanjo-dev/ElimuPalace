@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SMIS.Web")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b306365a7048b50fa56af396114646f59ea20746")]
 [assembly: System.Reflection.AssemblyProductAttribute("SMIS.Web")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SMIS.Web")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

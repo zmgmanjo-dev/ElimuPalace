@@ -12,15 +12,32 @@ public class UserManagementController : Controller
     private readonly UserManager<IdentityUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly ApplicationDbContext _db;
+    private readonly IServiceProvider _serviceProvider;
 
     public UserManagementController(
         UserManager<IdentityUser> userManager,
         RoleManager<IdentityRole> roleManager,
-        ApplicationDbContext db)
+        ApplicationDbContext db,
+        IServiceProvider serviceProvider)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _db = db;
+        _serviceProvider = serviceProvider;
+    }
+
+    // Registers a newly created login in the platform-wide directory, so the
+    // common /Login page can find which school's database it belongs to.
+    // Safe to call in Standalone mode too — there, the directory service
+    // isn't registered (no master database exists), so this quietly does nothing.
+    private async Task RegisterInDirectoryAsync(string email)
+    {
+        var directory = _serviceProvider.GetService<SMIS.Web.Services.GlobalUserDirectoryService>();
+        var tenantContext = _serviceProvider.GetService<SMIS.Web.Services.TenantContext>();
+        if (directory == null || tenantContext == null || string.IsNullOrEmpty(tenantContext.DatabaseName))
+            return;
+
+        await directory.RegisterUserAsync(email, tenantContext.DatabaseName, tenantContext.SchoolName ?? "");
     }
 
     // GET: /UserManagement
@@ -85,6 +102,8 @@ public class UserManagementController : Controller
         // Store full name in claims
         await _userManager.AddClaimAsync(user,
             new System.Security.Claims.Claim("FullName", fullName));
+
+        await RegisterInDirectoryAsync(email);
 
         TempData["Success"] =
             $"User '{fullName}' created successfully with role '{role}'!";
@@ -225,160 +244,163 @@ public class UserManagementController : Controller
         ViewBag.RolePermissions = RolePermissions.GetAllPermissions();
         return View(roles);
     }
+
     // ── PARENT ACCOUNTS ──────────────────────────────────────────
 
-// GET: /UserManagement/ParentAccounts
-public async Task<IActionResult> ParentAccounts(string? search)
-{
-    var parentUsers = (await _userManager.GetUsersInRoleAsync("Parent")).ToList();
-
-    if (!string.IsNullOrEmpty(search))
-        parentUsers = parentUsers
-            .Where(u => (u.Email ?? "").Contains(search, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-    var parentIds = parentUsers.Select(u => u.Id).ToList();
-
-    var links = await _db.ParentStudentLinks
-        .Include(l => l.Student).ThenInclude(s => s.ClassLevel)
-        .Where(l => parentIds.Contains(l.ParentUserId))
-        .ToListAsync();
-
-    var linksByParent = links
-        .GroupBy(l => l.ParentUserId)
-        .ToDictionary(g => g.Key, g => g.ToList());
-
-    var fullNames = new Dictionary<string, string>();
-    foreach (var u in parentUsers)
+    // GET: /UserManagement/ParentAccounts
+    public async Task<IActionResult> ParentAccounts(string? search)
     {
-        var claims = await _userManager.GetClaimsAsync(u);
-        fullNames[u.Id] = claims.FirstOrDefault(c => c.Type == "FullName")?.Value
-            ?? u.Email ?? "-";
+        var parentUsers = (await _userManager.GetUsersInRoleAsync("Parent")).ToList();
+
+        if (!string.IsNullOrEmpty(search))
+            parentUsers = parentUsers
+                .Where(u => (u.Email ?? "").Contains(search, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+        var parentIds = parentUsers.Select(u => u.Id).ToList();
+
+        var links = await _db.ParentStudentLinks
+            .Include(l => l.Student).ThenInclude(s => s.ClassLevel)
+            .Where(l => parentIds.Contains(l.ParentUserId))
+            .ToListAsync();
+
+        var linksByParent = links
+            .GroupBy(l => l.ParentUserId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var fullNames = new Dictionary<string, string>();
+        foreach (var u in parentUsers)
+        {
+            var claims = await _userManager.GetClaimsAsync(u);
+            fullNames[u.Id] = claims.FirstOrDefault(c => c.Type == "FullName")?.Value
+                ?? u.Email ?? "-";
+        }
+
+        ViewBag.LinksByParent = linksByParent;
+        ViewBag.FullNames = fullNames;
+        ViewBag.Search = search;
+        ViewBag.AllStudents = await _db.Students
+            .Include(s => s.ClassLevel)
+            .Where(s => s.Status == SMIS.Domain.Enums.StudentStatus.Active)
+            .OrderBy(s => s.LastName).ToListAsync();
+
+        return View(parentUsers.OrderBy(u => fullNames[u.Id]).ToList());
     }
 
-    ViewBag.LinksByParent = linksByParent;
-    ViewBag.FullNames = fullNames;
-    ViewBag.Search = search;
-    ViewBag.AllStudents = await _db.Students
-        .Include(s => s.ClassLevel)
-        .Where(s => s.Status == SMIS.Domain.Enums.StudentStatus.Active)
-        .OrderBy(s => s.LastName).ToListAsync();
-
-    return View(parentUsers.OrderBy(u => fullNames[u.Id]).ToList());
-}
-
-// GET: /UserManagement/CreateParentAccount
-public async Task<IActionResult> CreateParentAccount()
-{
-    ViewBag.Students = await _db.Students
-        .Include(s => s.ClassLevel)
-        .Where(s => s.Status == SMIS.Domain.Enums.StudentStatus.Active)
-        .OrderBy(s => s.LastName).ToListAsync();
-    return View();
-}
-
-// POST: /UserManagement/CreateParentAccount
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> CreateParentAccount(string fullName,
-    string email, string password, string? phone,
-    string relationship, List<int> studentIds)
-{
-    var existing = await _userManager.FindByEmailAsync(email);
-    if (existing != null)
+    // GET: /UserManagement/CreateParentAccount
+    public async Task<IActionResult> CreateParentAccount()
     {
-        TempData["Error"] = "A user with this email already exists!";
-        return RedirectToAction(nameof(CreateParentAccount));
+        ViewBag.Students = await _db.Students
+            .Include(s => s.ClassLevel)
+            .Where(s => s.Status == SMIS.Domain.Enums.StudentStatus.Active)
+            .OrderBy(s => s.LastName).ToListAsync();
+        return View();
     }
 
-    if (studentIds == null || !studentIds.Any())
+    // POST: /UserManagement/CreateParentAccount
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateParentAccount(string fullName,
+        string email, string password, string? phone,
+        string relationship, List<int> studentIds)
     {
-        TempData["Error"] = "Please select at least one student to link.";
-        return RedirectToAction(nameof(CreateParentAccount));
+        var existing = await _userManager.FindByEmailAsync(email);
+        if (existing != null)
+        {
+            TempData["Error"] = "A user with this email already exists!";
+            return RedirectToAction(nameof(CreateParentAccount));
+        }
+
+        if (studentIds == null || !studentIds.Any())
+        {
+            TempData["Error"] = "Please select at least one student to link.";
+            return RedirectToAction(nameof(CreateParentAccount));
+        }
+
+        var user = new IdentityUser
+        {
+            UserName = email,
+            Email = email,
+            EmailConfirmed = true,
+            PhoneNumber = phone
+        };
+
+        var result = await _userManager.CreateAsync(user, password);
+        if (!result.Succeeded)
+        {
+            TempData["Error"] = string.Join(", ", result.Errors.Select(e => e.Description));
+            return RedirectToAction(nameof(CreateParentAccount));
+        }
+
+        await _userManager.AddToRoleAsync(user, "Parent");
+        await _userManager.AddClaimAsync(user,
+            new System.Security.Claims.Claim("FullName", fullName));
+
+        foreach (var studentId in studentIds.Distinct())
+        {
+            _db.ParentStudentLinks.Add(new SMIS.Domain.Entities.Students.ParentStudentLink
+            {
+                ParentUserId = user.Id,
+                StudentId = studentId,
+                Relationship = string.IsNullOrWhiteSpace(relationship) ? "Parent" : relationship,
+                CreatedBy = User.Identity?.Name ?? "system",
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+        await _db.SaveChangesAsync();
+
+        await RegisterInDirectoryAsync(email);
+
+        TempData["Success"] =
+            $"Parent account '{fullName}' created and linked to {studentIds.Count} student(s)!";
+        return RedirectToAction(nameof(ParentAccounts));
     }
 
-    var user = new IdentityUser
+    // POST: /UserManagement/LinkStudentToParent
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> LinkStudentToParent(
+        string parentUserId, int studentId, string relationship)
     {
-        UserName = email,
-        Email = email,
-        EmailConfirmed = true,
-        PhoneNumber = phone
-    };
+        var user = await _userManager.FindByIdAsync(parentUserId);
+        if (user == null) return NotFound();
 
-    var result = await _userManager.CreateAsync(user, password);
-    if (!result.Succeeded)
-    {
-        TempData["Error"] = string.Join(", ", result.Errors.Select(e => e.Description));
-        return RedirectToAction(nameof(CreateParentAccount));
-    }
+        var already = await _db.ParentStudentLinks
+            .AnyAsync(l => l.ParentUserId == parentUserId && l.StudentId == studentId);
+        if (already)
+        {
+            TempData["Error"] = "This student is already linked to this parent.";
+            return RedirectToAction(nameof(ParentAccounts));
+        }
 
-    await _userManager.AddToRoleAsync(user, "Parent");
-    await _userManager.AddClaimAsync(user,
-        new System.Security.Claims.Claim("FullName", fullName));
-
-    foreach (var studentId in studentIds.Distinct())
-    {
         _db.ParentStudentLinks.Add(new SMIS.Domain.Entities.Students.ParentStudentLink
         {
-            ParentUserId = user.Id,
+            ParentUserId = parentUserId,
             StudentId = studentId,
             Relationship = string.IsNullOrWhiteSpace(relationship) ? "Parent" : relationship,
             CreatedBy = User.Identity?.Name ?? "system",
             CreatedAt = DateTime.UtcNow
         });
-    }
-    await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync();
 
-    TempData["Success"] =
-        $"Parent account '{fullName}' created and linked to {studentIds.Count} student(s)!";
-    return RedirectToAction(nameof(ParentAccounts));
-}
-
-// POST: /UserManagement/LinkStudentToParent
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> LinkStudentToParent(
-    string parentUserId, int studentId, string relationship)
-{
-    var user = await _userManager.FindByIdAsync(parentUserId);
-    if (user == null) return NotFound();
-
-    var already = await _db.ParentStudentLinks
-        .AnyAsync(l => l.ParentUserId == parentUserId && l.StudentId == studentId);
-    if (already)
-    {
-        TempData["Error"] = "This student is already linked to this parent.";
+        TempData["Success"] = "Student linked successfully!";
         return RedirectToAction(nameof(ParentAccounts));
     }
 
-    _db.ParentStudentLinks.Add(new SMIS.Domain.Entities.Students.ParentStudentLink
+    // POST: /UserManagement/UnlinkStudent
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UnlinkStudent(int linkId)
     {
-        ParentUserId = parentUserId,
-        StudentId = studentId,
-        Relationship = string.IsNullOrWhiteSpace(relationship) ? "Parent" : relationship,
-        CreatedBy = User.Identity?.Name ?? "system",
-        CreatedAt = DateTime.UtcNow
-    });
-    await _db.SaveChangesAsync();
+        var link = await _db.ParentStudentLinks.FindAsync(linkId);
+        if (link == null) return NotFound();
 
-    TempData["Success"] = "Student linked successfully!";
-    return RedirectToAction(nameof(ParentAccounts));
-}
+        _db.ParentStudentLinks.Remove(link);
+        await _db.SaveChangesAsync();
 
-// POST: /UserManagement/UnlinkStudent
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> UnlinkStudent(int linkId)
-{
-    var link = await _db.ParentStudentLinks.FindAsync(linkId);
-    if (link == null) return NotFound();
-
-    _db.ParentStudentLinks.Remove(link);
-    await _db.SaveChangesAsync();
-
-    TempData["Success"] = "Student unlinked successfully!";
-    return RedirectToAction(nameof(ParentAccounts));
-}
+        TempData["Success"] = "Student unlinked successfully!";
+        return RedirectToAction(nameof(ParentAccounts));
+    }
 }
 
 /// <summary>
